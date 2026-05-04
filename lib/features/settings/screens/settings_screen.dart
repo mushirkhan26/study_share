@@ -79,7 +79,7 @@ class SettingsScreen extends StatelessWidget {
             _buildSettingItem(
               icon: Icons.info_outline,
               title: "About App",
-              onTap: () {},
+              onTap: () => context.push(AppRoutes.aboutApp),
             ),
 
             const SizedBox(height: 30),
