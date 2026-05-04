@@ -30,13 +30,50 @@ class _SellBookScreenState extends State<SellBookScreen> {
   final List<String> _tags = ['BCA', 'B.Tech', 'B.Sc', 'BA', 'Novels', 'Other'];
 
   Future<void> _pickImage() async {
-    // Gallery se image pick karne ka logic
-    final XFile? pickedFile = await _picker.pickImage(source: ImageSource.gallery);
-    if (pickedFile != null) {
-      setState(() {
-        _imageFile = pickedFile;
-      });
-    }
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      builder: (context) => Container(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text("Select Source", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 20),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                _buildSourceOption(Icons.camera_alt_rounded, "Camera", ImageSource.camera),
+                _buildSourceOption(Icons.photo_library_rounded, "Gallery", ImageSource.gallery),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSourceOption(IconData icon, String label, ImageSource source) {
+    return GestureDetector(
+      onTap: () async {
+        Navigator.pop(context);
+        final XFile? pickedFile = await _picker.pickImage(source: source, imageQuality: 50);
+        if (pickedFile != null) {
+          setState(() => _imageFile = pickedFile);
+        }
+      },
+      child: Column(
+        children: [
+          CircleAvatar(
+            radius: 30,
+            backgroundColor: const Color(0xFF00BFA5).withValues(alpha: 0.1),
+            child: Icon(icon, color: const Color(0xFF00BFA5), size: 30),
+          ),
+          const SizedBox(height: 8),
+          Text(label, style: const TextStyle(fontWeight: FontWeight.w500)),
+        ],
+      ),
+    );
   }
 
   void _submitAd() {
@@ -48,12 +85,33 @@ class _SellBookScreenState extends State<SellBookScreen> {
         return;
       }
 
-      // TODO: Backend upload logic yahan aayega
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Book Ad Posted Successfully!", style: TextStyle(color: Colors.white)), backgroundColor: Colors.green),
+      // Show Loading
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => const Center(child: CircularProgressIndicator(color: Color(0xFF00BFA5))),
       );
 
-      // Form reset or navigate back
+      // Simulate API call
+      Future.delayed(const Duration(seconds: 2), () {
+        Navigator.pop(context); // Close loading
+        
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text("Book Ad Posted Successfully!", style: TextStyle(color: Colors.white)), 
+            backgroundColor: Colors.green
+          ),
+        );
+
+        // Clear Form
+        _titleController.clear();
+        _authorController.clear();
+        _sellingPriceController.clear();
+        _originalPriceController.clear();
+        setState(() => _imageFile = null);
+        
+        // Future: Navigate to My Ads
+      });
     }
   }
 
