@@ -56,7 +56,7 @@ class SettingsScreen extends StatelessWidget {
             _buildSettingItem(
               icon: Icons.language_outlined,
               title: "App Language",
-              onTap: () {},
+              onTap: () => context.push(AppRoutes.language),
             ),
 
             const Padding(
