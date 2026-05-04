@@ -32,7 +32,7 @@ class SettingsScreen extends StatelessWidget {
             _buildSettingItem(
               icon: Icons.notifications_none_rounded,
               title: "Notifications",
-              onTap: () {},
+              onTap: () => context.push(AppRoutes.notifications),
             ),
             _buildSettingItem(
               icon: Icons.lock_outline_rounded,

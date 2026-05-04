@@ -19,4 +19,5 @@ class AppRoutes {
   static const String savedMaterials = '/saved'; // Saved Books
   static const String settings = '/settings';
   static const String editProfile = '/edit-profile';
+  static const String notifications = '/notifications';
 }

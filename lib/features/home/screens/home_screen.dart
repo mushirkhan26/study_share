@@ -31,7 +31,7 @@ class HomeScreen extends StatelessWidget {
         actions: [
           IconButton(
             icon: const Icon(Icons.notifications_none, color: Colors.black),
-            onPressed: () {},
+            onPressed: () => context.push(AppRoutes.notifications),
           ),
         ],
       ),
