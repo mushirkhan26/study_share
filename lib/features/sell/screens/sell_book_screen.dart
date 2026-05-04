@@ -94,6 +94,7 @@ class _SellBookScreenState extends State<SellBookScreen> {
 
       // Simulate API call
       Future.delayed(const Duration(seconds: 2), () {
+        if (!mounted) return;
         Navigator.pop(context); // Close loading
         
         ScaffoldMessenger.of(context).showSnackBar(
