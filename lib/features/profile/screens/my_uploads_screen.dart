@@ -36,21 +36,32 @@ class _MyUploadsScreenState extends State<MyUploadsScreen> {
         iconTheme: const IconThemeData(color: Colors.black),
         title: const Text("My Ads", style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
       ),
-      body: _myAds.isEmpty
-          ? Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.inventory_2_outlined, size: 80, color: Colors.grey[300]),
-            const SizedBox(height: 15),
-            const Text("You haven't posted any ads yet.", style: TextStyle(color: Colors.grey, fontSize: 16)),
-          ],
-        ),
-      )
-          : ListView.builder(
-        padding: const EdgeInsets.all(15),
-        itemCount: _myAds.length,
-        itemBuilder: (context, index) {
+      body: RefreshIndicator(
+        onRefresh: () async {
+          await Future.delayed(const Duration(seconds: 1));
+          // Mock refresh logic
+        },
+        color: primaryColor,
+        child: _myAds.isEmpty
+            ? SingleChildScrollView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                child: Container(
+                  height: MediaQuery.of(context).size.height * 0.7,
+                  alignment: Alignment.center,
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.inventory_2_outlined, size: 80, color: Colors.grey[300]),
+                      const SizedBox(height: 15),
+                      const Text("You haven't posted any ads yet.", style: TextStyle(color: Colors.grey, fontSize: 16)),
+                    ],
+                  ),
+                ),
+              )
+            : ListView.builder(
+          padding: const EdgeInsets.all(15),
+          itemCount: _myAds.length,
+          itemBuilder: (context, index) {
           final ad = _myAds[index];
           final isActive = ad['status'] == 'Active';
 
@@ -150,7 +161,11 @@ class _MyUploadsScreenState extends State<MyUploadsScreen> {
 
                       // Edit Button
                       TextButton.icon(
-                        onPressed: () {},
+                        onPressed: () {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text("Edit feature coming soon!"), backgroundColor: Colors.blue),
+                          );
+                        },
                         icon: const Icon(Icons.edit_outlined, color: Colors.blue, size: 18),
                         label: const Text("Edit", style: TextStyle(color: Colors.blue, fontSize: 13)),
                       ),
@@ -169,6 +184,7 @@ class _MyUploadsScreenState extends State<MyUploadsScreen> {
           );
         },
       ),
+    ),
     );
   }
 
