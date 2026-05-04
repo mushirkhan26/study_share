@@ -18,6 +18,7 @@ import '../../features/settings/screens/privacy_security_screen.dart';
 import '../../features/settings/screens/appearance_screen.dart';
 import '../../features/settings/screens/language_screen.dart';
 import '../../features/settings/screens/help_center_screen.dart';
+import '../../features/settings/screens/privacy_policy_screen.dart';
 import '../../features/profile/screens/my_uploads_screen.dart';
 import '../../features/profile/screens/saved_materials_screen.dart';
 import '../../features/settings/screens/settings_screen.dart';
@@ -122,6 +123,10 @@ final GoRouter appRouter = GoRouter(
     GoRoute(
       path: AppRoutes.helpCenter,
       builder: (context, state) => const HelpCenterScreen(),
+    ),
+    GoRoute(
+      path: AppRoutes.privacyPolicy,
+      builder: (context, state) => const PrivacyPolicyScreen(),
     ),
   ],
 );
