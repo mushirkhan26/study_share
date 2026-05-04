@@ -149,12 +149,12 @@ class SettingsScreen extends StatelessWidget {
         content: const Text("Are you sure you want to logout?"),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () => Navigator.of(context, rootNavigator: true).pop(),
             child: const Text("Cancel", style: TextStyle(color: Colors.grey)),
           ),
           ElevatedButton(
             onPressed: () {
-              Navigator.pop(context);
+              Navigator.of(context, rootNavigator: true).pop();
               context.go(AppRoutes.loginRoute);
             },
             style: ElevatedButton.styleFrom(

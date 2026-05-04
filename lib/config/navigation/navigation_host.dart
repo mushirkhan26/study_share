@@ -85,7 +85,7 @@ class _NavigationHostState extends State<NavigationHost> {
                                 icon: Icons.book_outlined,
                                 text: "My Uploads",
                                 onTap: () {
-                                  Navigator.pop(context);
+                                  Navigator.of(context, rootNavigator: true).pop();
                                   context.push(AppRoutes.myUploads);
                                 },
                               ),
@@ -93,7 +93,7 @@ class _NavigationHostState extends State<NavigationHost> {
                                 icon: Icons.bookmark_border,
                                 text: "Saved Materials",
                                 onTap: () {
-                                  Navigator.pop(context);
+                                  Navigator.of(context, rootNavigator: true).pop();
                                   context.push(AppRoutes.savedMaterials);
                                 },
                               ),
@@ -101,7 +101,7 @@ class _NavigationHostState extends State<NavigationHost> {
                                 icon: Icons.settings_outlined,
                                 text: "Settings",
                                 onTap: () {
-                                  Navigator.pop(context);
+                                  Navigator.of(context, rootNavigator: true).pop();
                                   context.push(AppRoutes.settings);
                                 },
                               ),
@@ -113,7 +113,7 @@ class _NavigationHostState extends State<NavigationHost> {
                                 ),
                                 title: const Text("Logout", style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14, color: Colors.red)),
                                 onTap: () {
-                                  Navigator.pop(context);
+                                  Navigator.of(context, rootNavigator: true).pop();
                                   _showLogoutDialog(context);
                                 },
                               ),
@@ -236,10 +236,10 @@ void _showLogoutDialog(BuildContext context) {
       title: const Text("Logout"),
       content: const Text("Are you sure you want to logout?"),
       actions: [
-        TextButton(onPressed: () => Navigator.pop(context), child: const Text("Cancel")),
+        TextButton(onPressed: () => Navigator.of(context, rootNavigator: true).pop(), child: const Text("Cancel")),
         ElevatedButton(
           onPressed: () {
-            Navigator.pop(context);
+            Navigator.of(context, rootNavigator: true).pop();
             context.go(AppRoutes.loginRoute);
           },
           style: ElevatedButton.styleFrom(backgroundColor: Colors.red),

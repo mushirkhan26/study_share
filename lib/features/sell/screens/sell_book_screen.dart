@@ -11,6 +11,7 @@ class SellBookScreen extends StatefulWidget {
 
 class _SellBookScreenState extends State<SellBookScreen> {
   final _formKey = GlobalKey<FormState>();
+  bool _isSubmitting = false;
 
   // Image Picker
   XFile? _imageFile;
@@ -77,6 +78,8 @@ class _SellBookScreenState extends State<SellBookScreen> {
   }
 
   void _submitAd() {
+    if (_isSubmitting) return;
+
     if (_formKey.currentState!.validate()) {
       if (_imageFile == null) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -84,6 +87,8 @@ class _SellBookScreenState extends State<SellBookScreen> {
         );
         return;
       }
+
+      setState(() => _isSubmitting = true);
 
       // Show Loading
       showDialog(
@@ -95,7 +100,11 @@ class _SellBookScreenState extends State<SellBookScreen> {
       // Simulate API call
       Future.delayed(const Duration(seconds: 2), () {
         if (!mounted) return;
-        Navigator.pop(context); // Close loading
+        
+        // Use rootNavigator: true to safely close the dialog
+        Navigator.of(context, rootNavigator: true).pop(); 
+        
+        setState(() => _isSubmitting = false);
         
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -110,8 +119,6 @@ class _SellBookScreenState extends State<SellBookScreen> {
         _sellingPriceController.clear();
         _originalPriceController.clear();
         setState(() => _imageFile = null);
-        
-        // Future: Navigate to My Ads
       });
     }
   }
