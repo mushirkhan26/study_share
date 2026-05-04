@@ -18,4 +18,5 @@ class AppRoutes {
   static const String myUploads = '/my-uploads'; // My Ads
   static const String savedMaterials = '/saved'; // Saved Books
   static const String settings = '/settings';
+  static const String editProfile = '/edit-profile';
 }

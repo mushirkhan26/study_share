@@ -27,7 +27,7 @@ class SettingsScreen extends StatelessWidget {
             _buildSettingItem(
               icon: Icons.person_outline,
               title: "Edit Profile",
-              onTap: () {}, // Future: Profile editing
+              onTap: () => context.push(AppRoutes.editProfile),
             ),
             _buildSettingItem(
               icon: Icons.notifications_none_rounded,

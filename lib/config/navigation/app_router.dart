@@ -12,6 +12,7 @@ import '../../features/search/screens/search_screen.dart';
 import '../../features/sell/screens/sell_book_screen.dart';
 import '../../features/chat/screens/chat_screen.dart';
 import '../../features/profile/screens/profile_screen.dart';
+import '../../features/profile/screens/edit_profile_screen.dart';
 import '../../features/profile/screens/my_uploads_screen.dart';
 import '../../features/profile/screens/saved_materials_screen.dart';
 import '../../features/settings/screens/settings_screen.dart';
@@ -92,6 +93,10 @@ final GoRouter appRouter = GoRouter(
     GoRoute(
       path: AppRoutes.settings,
       builder: (context, state) => const SettingsScreen(),
+    ),
+    GoRoute(
+      path: AppRoutes.editProfile,
+      builder: (context, state) => const EditProfileScreen(),
     ),
   ],
 );

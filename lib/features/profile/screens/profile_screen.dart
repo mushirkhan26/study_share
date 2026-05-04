@@ -18,7 +18,7 @@ class ProfileScreen extends StatelessWidget {
         actions: [
           IconButton(
             icon: const Icon(Icons.edit_outlined, color: Colors.black),
-            onPressed: () {},
+            onPressed: () => context.push(AppRoutes.editProfile),
           ),
         ],
         automaticallyImplyLeading: false, // Bottom bar screen
