@@ -12,36 +12,71 @@ class SearchScreen extends StatefulWidget {
 
 class _SearchScreenState extends State<SearchScreen> {
   // Filters state
-  String _selectedCourse = 'BCA';
+  String _selectedCourse = 'All';
   String _selectedSemester = 'All';
+  String _searchQuery = '';
 
   final List<String> _courses = ['All', 'BCA', 'B.Tech', 'B.Sc', 'BA', 'B.Com'];
   final List<String> _semesters = ['All', '1st Sem', '2nd Sem', '3rd Sem', '4th Sem', '5th Sem', '6th Sem'];
 
+  // Dummy Data for Search
+  final List<Map<String, dynamic>> _allBooks = [
+    {"title": "Let Us C", "author": "Yashavant Kanetkar", "sell": 150, "orig": 350, "cond": "Good", "course": "BCA", "sem": "1st Sem"},
+    {"title": "Data Structures in Java", "author": "Robert Lafore", "sell": 250, "orig": 600, "cond": "Like New", "course": "BCA", "sem": "3rd Sem"},
+    {"title": "Engineering Mathematics", "author": "H.K. Dass", "sell": 300, "orig": 750, "cond": "Old", "course": "B.Tech", "sem": "1st Sem"},
+    {"title": "Java: The Complete Reference", "author": "Herbert Schildt", "sell": 450, "orig": 900, "cond": "Like New", "course": "BCA", "sem": "4th Sem"},
+    {"title": "Python Programming", "author": "Reema Thareja", "sell": 200, "orig": 500, "cond": "Good", "course": "B.Sc", "sem": "2nd Sem"},
+    {"title": "Software Engineering", "author": "Sommerville", "sell": 350, "orig": 850, "cond": "Good", "course": "B.Tech", "sem": "4th Sem"},
+  ];
+
+  List<Map<String, dynamic>> get _filteredBooks {
+    return _allBooks.where((book) {
+      final matchesCourse = _selectedCourse == 'All' || book['course'] == _selectedCourse;
+      final matchesSem = _selectedSemester == 'All' || book['sem'] == _selectedSemester;
+      final matchesSearch = _searchQuery.isEmpty || 
+          book['title'].toLowerCase().contains(_searchQuery.toLowerCase()) ||
+          book['author'].toLowerCase().contains(_searchQuery.toLowerCase());
+      
+      return matchesCourse && matchesSem && matchesSearch;
+    }).toList();
+  }
+
   @override
   Widget build(BuildContext context) {
+    final filteredResults = _filteredBooks;
+
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
         title: const Text("Search Books", style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
-        automaticallyImplyLeading: false, // Bottom bar wali screen hai isliye back button hide karenge
+        actions: [
+          if (_selectedCourse != 'All' || _selectedSemester != 'All' || _searchQuery.isNotEmpty)
+            IconButton(
+              icon: const Icon(Icons.filter_alt_off_outlined, color: Color(0xFF00BFA5)),
+              onPressed: () {
+                setState(() {
+                  _selectedCourse = 'All';
+                  _selectedSemester = 'All';
+                  _searchQuery = '';
+                });
+              },
+            )
+        ],
+        automaticallyImplyLeading: false,
       ),
       body: Padding(
-        padding: const EdgeInsets.all(20.0),
+        padding: const EdgeInsets.symmetric(horizontal: 20.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // 🔎 Search Bar
             TextField(
+              onChanged: (value) => setState(() => _searchQuery = value),
               decoration: InputDecoration(
-                hintText: "Search by title, author, or keyword...",
+                hintText: "Search by title or author...",
                 prefixIcon: const Icon(Icons.search, color: Color(0xFF00BFA5)),
-                suffixIcon: IconButton(
-                  icon: const Icon(Icons.mic_none, color: Colors.grey),
-                  onPressed: () {}, // Voice search dummy
-                ),
                 filled: true,
                 fillColor: Colors.grey[100],
                 border: OutlineInputBorder(
@@ -82,37 +117,56 @@ class _SearchScreenState extends State<SearchScreen> {
             ),
 
             const SizedBox(height: 25),
-            const Text("Results (4 found)", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.grey)),
+            Text(
+              "Results (${filteredResults.length} found)", 
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.grey)
+            ),
             const SizedBox(height: 15),
 
             // 📊 Search Results Grid
             Expanded(
-              child: GridView.builder(
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 2,
-                  crossAxisSpacing: 15,
-                  mainAxisSpacing: 15,
-                  childAspectRatio: 0.65,
-                ),
-                itemCount: 4, // Dummy count
-                itemBuilder: (context, index) {
-                  return GestureDetector(
-                    onTap: () => context.push(AppRoutes.bookDetailRoute),
-                    child: const BookCard(
-                      title: "Let Us C",
-                      author: "Yashavant Kanetkar",
-                      sellingPrice: 150,
-                      originalPrice: 350,
-                      condition: "Good",
-                      tag: "BCA 1st Sem",
+              child: filteredResults.isEmpty 
+                ? _buildEmptyResults()
+                : GridView.builder(
+                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 2,
+                      crossAxisSpacing: 15,
+                      mainAxisSpacing: 15,
+                      childAspectRatio: 0.65,
                     ),
-                  );
-                },
-              ),
+                    itemCount: filteredResults.length,
+                    itemBuilder: (context, index) {
+                      final book = filteredResults[index];
+                      return GestureDetector(
+                        onTap: () => context.push(AppRoutes.bookDetailRoute),
+                        child: BookCard(
+                          title: book['title'],
+                          author: book['author'],
+                          sellingPrice: book['sell'],
+                          originalPrice: book['orig'],
+                          condition: book['cond'],
+                          tag: "${book['course']} ${book['sem']}",
+                        ),
+                      );
+                    },
+                  ),
             ),
-            const SizedBox(height: 60), // Bottom bar clearance
+            const SizedBox(height: 60),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildEmptyResults() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.search_off_rounded, size: 80, color: Colors.grey[300]),
+          const SizedBox(height: 15),
+          const Text("No books found matching your filters.", style: TextStyle(color: Colors.grey, fontSize: 16)),
+        ],
       ),
     );
   }
