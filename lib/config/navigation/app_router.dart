@@ -14,6 +14,7 @@ import '../../features/chat/screens/chat_screen.dart';
 import '../../features/profile/screens/profile_screen.dart';
 import '../../features/profile/screens/edit_profile_screen.dart';
 import '../../features/notifications/screens/notifications_screen.dart';
+import '../../features/settings/screens/privacy_security_screen.dart';
 import '../../features/profile/screens/my_uploads_screen.dart';
 import '../../features/profile/screens/saved_materials_screen.dart';
 import '../../features/settings/screens/settings_screen.dart';
@@ -102,6 +103,10 @@ final GoRouter appRouter = GoRouter(
     GoRoute(
       path: AppRoutes.notifications,
       builder: (context, state) => const NotificationsScreen(),
+    ),
+    GoRoute(
+      path: AppRoutes.privacySecurity,
+      builder: (context, state) => const PrivacySecurityScreen(),
     ),
   ],
 );

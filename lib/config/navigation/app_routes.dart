@@ -20,4 +20,5 @@ class AppRoutes {
   static const String settings = '/settings';
   static const String editProfile = '/edit-profile';
   static const String notifications = '/notifications';
+  static const String privacySecurity = '/privacy-security';
 }

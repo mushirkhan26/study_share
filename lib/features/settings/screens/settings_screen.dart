@@ -37,7 +37,7 @@ class SettingsScreen extends StatelessWidget {
             _buildSettingItem(
               icon: Icons.lock_outline_rounded,
               title: "Privacy & Security",
-              onTap: () {},
+              onTap: () => context.push(AppRoutes.privacySecurity),
             ),
 
             const Padding(
