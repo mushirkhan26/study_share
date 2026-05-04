@@ -50,8 +50,9 @@ class SettingsScreen extends StatelessWidget {
             _buildSettingItem(
               icon: Icons.dark_mode_outlined,
               title: "Appearance (Theme Mode)",
-              onTap: () {},
+              onTap: () => context.push(AppRoutes.appearance),
             ),
+
             _buildSettingItem(
               icon: Icons.language_outlined,
               title: "App Language",
