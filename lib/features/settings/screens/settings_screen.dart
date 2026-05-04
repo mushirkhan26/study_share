@@ -69,7 +69,7 @@ class SettingsScreen extends StatelessWidget {
             _buildSettingItem(
               icon: Icons.help_outline_rounded,
               title: "Help Center / FAQ",
-              onTap: () {},
+              onTap: () => context.push(AppRoutes.helpCenter),
             ),
             _buildSettingItem(
               icon: Icons.privacy_tip_outlined,

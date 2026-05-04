@@ -23,4 +23,5 @@ class AppRoutes {
   static const String privacySecurity = '/privacy-security';
   static const String appearance = '/appearance';
   static const String language = '/language';
+  static const String helpCenter = '/help-center';
 }
