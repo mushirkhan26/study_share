@@ -70,47 +70,22 @@ class AboutAppScreen extends StatelessWidget {
 
             const SizedBox(height: 30),
 
-            // --- Developer Info ---
+            // --- Team Section ---
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 24.0),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const Text(
-                    "Developer",
+                    "Our Team",
                     style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.primary),
                   ),
                   const SizedBox(height: 12),
-                  Container(
-                    padding: const EdgeInsets.all(15),
-                    decoration: BoxDecoration(
-                      color: Colors.grey[50],
-                      borderRadius: BorderRadius.circular(15),
-                      border: Border.all(color: Colors.grey.shade200),
-                    ),
-                    child: const Row(
-                      children: [
-                        CircleAvatar(
-                          backgroundColor: AppColors.primary,
-                          child: Icon(Icons.code_rounded, color: Colors.white),
-                        ),
-                        SizedBox(width: 15),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              "Mushir Khan",
-                              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                            ),
-                            Text(
-                              "Flutter Developer",
-                              style: TextStyle(color: Colors.grey, fontSize: 13),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
+                  
+                  _buildTeamMember("Mushir Khan", "Flutter Developer", Icons.code_rounded),
+                  _buildTeamMember("Rehan Qadri", "Backend Developer", Icons.storage_rounded),
+                  _buildTeamMember("Mohammed Rehan", "UI Designer", Icons.palette_rounded),
+                  _buildTeamMember("Mohammed Sajid", "Application Tester", Icons.bug_report_rounded),
                 ],
               ),
             ),
@@ -125,6 +100,40 @@ class AboutAppScreen extends StatelessWidget {
             const SizedBox(height: 20),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildTeamMember(String name, String role, IconData icon) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.grey[50],
+        borderRadius: BorderRadius.circular(15),
+        border: Border.all(color: Colors.grey.shade200),
+      ),
+      child: Row(
+        children: [
+          CircleAvatar(
+            backgroundColor: AppColors.primary,
+            child: Icon(icon, color: Colors.white, size: 20),
+          ),
+          const SizedBox(width: 15),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                name,
+                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+              ),
+              Text(
+                role,
+                style: const TextStyle(color: Colors.grey, fontSize: 12),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }
