@@ -12,7 +12,9 @@ class AppRoutes {
 
   // BookHub Specific Routes
   static const String bookDetailRoute = '/book-detail';
+  static const String studyMaterialsRoute = '/study-materials';
   static const String chatRoute = '/chat';
+  static const String inboxRoute = '/inbox';
 
   // Profile Sub-Routes (More Menu)
   static const String myUploads = '/my-uploads'; // My Ads

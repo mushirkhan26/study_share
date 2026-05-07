@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import '../../../core/api/network/book_service.dart';
+import '../../../core/utils/ui_utils.dart';
 
 class MyUploadsScreen extends StatefulWidget {
   const MyUploadsScreen({super.key});
@@ -8,207 +10,198 @@ class MyUploadsScreen extends StatefulWidget {
 }
 
 class _MyUploadsScreenState extends State<MyUploadsScreen> {
-  // Dummy data
-  final List<Map<String, dynamic>> _myAds = [
-    {
-      "title": "Let Us C - Yashavant Kanetkar",
-      "price": 150,
-      "date": "10 May 2026",
-      "status": "Active"
-    },
-    {
-      "title": "Data Structures in Java",
-      "price": 250,
-      "date": "08 May 2026",
-      "status": "Sold"
-    },
-  ];
+  final BookService _bookService = BookService();
+  List<dynamic> _myBooks = [];
+  bool _isLoading = true;
 
   @override
-  Widget build(BuildContext context) {
-    const Color primaryColor = Color(0xFF00BFA5);
-
-    return Scaffold(
-      backgroundColor: Colors.grey[50],
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 1,
-        iconTheme: const IconThemeData(color: Colors.black),
-        title: const Text("My Ads", style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
-      ),
-      body: RefreshIndicator(
-        onRefresh: () async {
-          await Future.delayed(const Duration(seconds: 1));
-          // Mock refresh logic
-        },
-        color: primaryColor,
-        child: _myAds.isEmpty
-            ? SingleChildScrollView(
-                physics: const AlwaysScrollableScrollPhysics(),
-                child: Container(
-                  height: MediaQuery.of(context).size.height * 0.7,
-                  alignment: Alignment.center,
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.inventory_2_outlined, size: 80, color: Colors.grey[300]),
-                      const SizedBox(height: 15),
-                      const Text("You haven't posted any ads yet.", style: TextStyle(color: Colors.grey, fontSize: 16)),
-                    ],
-                  ),
-                ),
-              )
-            : ListView.builder(
-          padding: const EdgeInsets.all(15),
-          itemCount: _myAds.length,
-          itemBuilder: (context, index) {
-          final ad = _myAds[index];
-          final isActive = ad['status'] == 'Active';
-
-          return Container(
-            margin: const EdgeInsets.only(bottom: 15),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(15),
-              boxShadow: [
-                BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10, offset: const Offset(0, 5)),
-              ],
-            ),
-            child: Column(
-              children: [
-                // 🟢 Top Section: Book Details
-                Padding(
-                  padding: const EdgeInsets.all(15),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Image Placeholder
-                      Container(
-                        height: 80,
-                        width: 60,
-                        decoration: BoxDecoration(
-                          color: Colors.grey[200],
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: const Icon(Icons.book, color: Colors.grey),
-                      ),
-                      const SizedBox(width: 15),
-                      // Details
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Expanded(
-                                  child: Text(
-                                    ad['title'],
-                                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                ),
-                                // Status Badge
-                                Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                  decoration: BoxDecoration(
-                                    color: isActive ? Colors.green.withValues(alpha: 0.1) : Colors.grey.withValues(alpha: 0.2),
-                                    borderRadius: BorderRadius.circular(5),
-                                  ),
-                                  child: Text(
-                                    ad['status'],
-                                    style: TextStyle(
-                                      fontSize: 10,
-                                      fontWeight: FontWeight.bold,
-                                      color: isActive ? Colors.green : Colors.grey[700],
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 5),
-                            Text("₹${ad['price']}", style: const TextStyle(color: primaryColor, fontWeight: FontWeight.bold, fontSize: 18)),
-                            const SizedBox(height: 5),
-                            Text("Posted on: ${ad['date']}", style: const TextStyle(color: Colors.grey, fontSize: 12)),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-
-                const Divider(height: 1, color: Color(0xFFEEEEEE)),
-
-                // 🟢 Bottom Section: Action Buttons
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 5),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    children: [
-                      // Mark as Sold Button
-                      if (isActive)
-                        TextButton.icon(
-                          onPressed: () {
-                            setState(() => ad['status'] = 'Sold');
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text("Ad marked as sold!"), backgroundColor: Colors.green),
-                            );
-                          },
-                          icon: const Icon(Icons.check_circle_outline, color: Colors.green, size: 18),
-                          label: const Text("Mark Sold", style: TextStyle(color: Colors.green, fontSize: 13)),
-                        ),
-
-                      // Edit Button
-                      TextButton.icon(
-                        onPressed: () {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text("Edit feature coming soon!"), backgroundColor: Colors.blue),
-                          );
-                        },
-                        icon: const Icon(Icons.edit_outlined, color: Colors.blue, size: 18),
-                        label: const Text("Edit", style: TextStyle(color: Colors.blue, fontSize: 13)),
-                      ),
-
-                      // Delete Button
-                      TextButton.icon(
-                        onPressed: () => _confirmDelete(context, index),
-                        icon: const Icon(Icons.delete_outline, color: Colors.red, size: 18),
-                        label: const Text("Delete", style: TextStyle(color: Colors.red, fontSize: 13)),
-                      ),
-                    ],
-                  ),
-                )
-              ],
-            ),
-          );
-        },
-      ),
-    ),
-    );
+  void initState() {
+    super.initState();
+    _fetchMyAds();
   }
 
-  // Delete Confirmation Dialog
-  void _confirmDelete(BuildContext context, int index) {
-    showDialog(
+  Future<void> _fetchMyAds() async {
+    setState(() => _isLoading = true);
+    final response = await _bookService.getMyAds();
+    if (response.success && response.data != null) {
+      setState(() {
+        _myBooks = response.data!;
+        _isLoading = false;
+      });
+    } else {
+      setState(() => _isLoading = false);
+    }
+  }
+
+  void _toggleSoldStatus(String id, bool currentStatus) async {
+    final response = await _bookService.updateBookStatus(id, !currentStatus);
+    if (response.success) {
+      _fetchMyAds();
+      if (mounted) UIUtils.showSnackBar(context, "Status updated!");
+    }
+  }
+
+  void _deleteAd(String id) async {
+    // Confirm delete
+    bool confirm = await showDialog(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text("Delete Ad?"),
-        content: const Text("Are you sure you want to permanently delete this ad?"),
+        content: const Text("Are you sure you want to remove this book listing?"),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text("Cancel")),
-          TextButton(
-              onPressed: () {
-                setState(() {
-                  _myAds.removeAt(index);
-                });
-                Navigator.pop(context);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text("Ad deleted successfully"), backgroundColor: Colors.red),
-                );
-              },
-              child: const Text("Delete", style: TextStyle(color: Colors.red))
-          ),
+          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text("Cancel")),
+          TextButton(onPressed: () => Navigator.pop(context, true), child: const Text("Delete", style: TextStyle(color: Colors.red))),
+        ],
+      ),
+    ) ?? false;
+
+    if (confirm) {
+      final response = await _bookService.deleteBook(id);
+      if (response.success) {
+        _fetchMyAds();
+        if (mounted) UIUtils.showSnackBar(context, "Ad deleted successfully");
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.white,
+      appBar: AppBar(
+        title: const Text("My Ads", style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
+        backgroundColor: Colors.white,
+        elevation: 0,
+        iconTheme: const IconThemeData(color: Colors.black),
+      ),
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : _myBooks.isEmpty
+              ? _buildEmptyState()
+              : RefreshIndicator(
+                  onRefresh: _fetchMyAds,
+                  child: ListView.builder(
+                    padding: const EdgeInsets.all(15),
+                    itemCount: _myBooks.length,
+                    itemBuilder: (context, index) {
+                      final book = _myBooks[index];
+                      final bool isSold = book['isSold'] ?? false;
+                      final imageUrl = (book['images'] != null && (book['images'] as List).isNotEmpty) 
+                          ? book['images'][0] 
+                          : null;
+
+                      return Card(
+                        margin: const EdgeInsets.only(bottom: 15),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+                        elevation: 0,
+                        color: Colors.grey[50],
+                        child: Padding(
+                          padding: const EdgeInsets.all(12),
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              // Book Image
+                              ClipRRect(
+                                borderRadius: BorderRadius.circular(10),
+                                child: Container(
+                                  width: 80,
+                                  height: 110,
+                                  color: Colors.grey[200],
+                                  child: imageUrl != null 
+                                    ? Image.network(imageUrl, fit: BoxFit.cover)
+                                    : const Icon(Icons.book, color: Colors.grey),
+                                ),
+                              ),
+                              const SizedBox(width: 15),
+                              // Details
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Row(
+                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        Expanded(
+                                          child: Text(
+                                            book['title'],
+                                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                        ),
+                                        if (isSold)
+                                          Container(
+                                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                            decoration: BoxDecoration(color: Colors.red.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(5)),
+                                            child: const Text("SOLD", style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold, fontSize: 10)),
+                                          ),
+                                      ],
+                                    ),
+                                    Text("₹${book['sellingPrice']}", style: const TextStyle(color: Color(0xFF00BFA5), fontWeight: FontWeight.bold)),
+                                    const SizedBox(height: 12),
+                                    // Action Buttons (Using Wrap to prevent overflow)
+                                    Wrap(
+                                      spacing: 8,
+                                      runSpacing: 8,
+                                      children: [
+                                        _buildActionButton(
+                                          isSold ? Icons.undo : Icons.check_circle_outline,
+                                          isSold ? "Available" : "Mark Sold",
+                                          isSold ? Colors.orange : Colors.green,
+                                          () => _toggleSoldStatus(book['id'], isSold),
+                                        ),
+                                        _buildActionButton(
+                                          Icons.delete_outline,
+                                          "Delete",
+                                          Colors.red,
+                                          () => _deleteAd(book['id']),
+                                        ),
+                                      ],
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+    );
+  }
+
+  Widget _buildActionButton(IconData icon, String label, Color color, VoidCallback onTap) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(8),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+        decoration: BoxDecoration(
+          color: color.withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: color.withValues(alpha: 0.3)),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 14, color: color),
+            const SizedBox(width: 4),
+            Text(label, style: TextStyle(color: color, fontSize: 11, fontWeight: FontWeight.bold)),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildEmptyState() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.library_books_outlined, size: 80, color: Colors.grey[300]),
+          const SizedBox(height: 15),
+          const Text("You haven't posted any ads yet.", style: TextStyle(color: Colors.grey, fontSize: 16)),
         ],
       ),
     );

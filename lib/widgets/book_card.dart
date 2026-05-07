@@ -7,6 +7,7 @@ class BookCard extends StatelessWidget {
   final int originalPrice;
   final String condition; // Like New, Good, Old
   final String tag; // BCA, B.Tech, etc.
+  final String? imageUrl;
 
   const BookCard({
     super.key,
@@ -16,6 +17,7 @@ class BookCard extends StatelessWidget {
     required this.originalPrice,
     required this.condition,
     required this.tag,
+    this.imageUrl,
   });
 
   @override
@@ -43,7 +45,16 @@ class BookCard extends StatelessWidget {
                 color: Colors.grey[200],
                 borderRadius: const BorderRadius.vertical(top: Radius.circular(15)),
               ),
-              child: const Icon(Icons.menu_book, size: 50, color: Colors.grey),
+              child: imageUrl != null
+                  ? ClipRRect(
+                      borderRadius: const BorderRadius.vertical(top: Radius.circular(15)),
+                      child: Image.network(
+                        imageUrl!,
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) => const Icon(Icons.menu_book, size: 50, color: Colors.grey),
+                      ),
+                    )
+                  : const Icon(Icons.menu_book, size: 50, color: Colors.grey),
             ),
           ),
 
@@ -108,11 +119,11 @@ class BookCard extends StatelessWidget {
     );
   }
 
-  // Chota function badge ka color decide karne ke liye
   Color _getConditionColor(String condition) {
     if (condition == "Like New") return Colors.green;
     if (condition == "Good") return Colors.orange;
-    return Colors.red;
+    if (condition == "Old") return Colors.red;
+    return Colors.grey;
   }
 
   Widget _buildBadge(String text, Color color) {

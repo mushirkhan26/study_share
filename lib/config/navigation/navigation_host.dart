@@ -4,6 +4,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'dart:ui';
+import '../../core/models/user_model.dart';
+import '../../core/services/secure_storage_service.dart';
+import '../../core/api/network/socket_service.dart';
+import '../../core/utils/ui_utils.dart';
 import '../theme/app_colors.dart';
 import 'app_routes.dart';
 
@@ -16,12 +20,66 @@ class NavigationHost extends StatefulWidget {
 }
 
 class _NavigationHostState extends State<NavigationHost> {
+  final SecureStorageService _storage = SecureStorageService();
+  final SocketService _socketService = SocketService();
+  
+  UserModel? _currentUser;
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUserData();
+    _setupNotifications();
+  }
+
+  Future<void> _loadUserData() async {
+    final data = await _storage.getUserData();
+    if (data != null) {
+      setState(() {
+        _currentUser = UserModel(
+          id: data['userId'] ?? '',
+          username: data['username'] ?? 'User',
+          email: data['email'] ?? '',
+          role: UserRoleExtension.fromString(data['role'] ?? 'buyer'),
+        );
+        _isLoading = false;
+      });
+    } else {
+      setState(() => _isLoading = false);
+    }
+  }
+
+  void _setupNotifications() {
+    _socketService.initSocket();
+    _socketService.onGlobalMessageReceived = (data) {
+      // Only show notification if NOT in that specific chat
+      if (_socketService.activeConversationId != data['conversationId'] && 
+          _currentUser?.id != data['senderId']) {
+        
+        if (mounted) {
+          UIUtils.showSnackBar(
+            context, 
+            "New message: ${data['text']}",
+          );
+        }
+      }
+    };
+  }
+
   int get _index {
+    if (_currentUser == null) return 0;
+    
     final String location = GoRouterState.of(context).uri.path;
     if (location.startsWith(AppRoutes.homeRoute)) return 0;
     if (location.startsWith(AppRoutes.searchRoute)) return 1;
-    if (location.startsWith(AppRoutes.sellRoute)) return 2;
-    if (location.startsWith(AppRoutes.profileRoute)) return 3;
+    
+    if (_currentUser!.isSeller) {
+      if (location.startsWith(AppRoutes.sellRoute)) return 2;
+      if (location.startsWith(AppRoutes.profileRoute)) return 3;
+    } else {
+      if (location.startsWith(AppRoutes.profileRoute)) return 2;
+    }
     return 0;
   }
 
@@ -65,30 +123,38 @@ class _NavigationHostState extends State<NavigationHost> {
                           child: Column(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              const Padding(
-                                padding: EdgeInsets.symmetric(vertical: 10),
+                              Padding(
+                                padding: const EdgeInsets.symmetric(vertical: 10),
                                 child: Column(
                                   children: [
-                                    CircleAvatar(
+                                    const CircleAvatar(
                                       radius: 25, 
                                       backgroundColor: AppColors.primary, 
                                       child: Icon(Icons.person, color: Colors.white)
                                     ),
-                                    SizedBox(height: 5),
-                                    Text("User Name", style: TextStyle(fontWeight: FontWeight.bold)),
-                                    Text("Student", style: TextStyle(fontSize: 12, color: Colors.grey)),
+                                    const SizedBox(height: 5),
+                                    Text(_currentUser?.username ?? "User", style: const TextStyle(fontWeight: FontWeight.bold)),
+                                    Text(
+                                      (_currentUser?.isSeller ?? false) ? "Seller Profile" : "Buyer Profile",
+                                      style: TextStyle(
+                                        fontSize: 12, 
+                                        color: (_currentUser?.isSeller ?? false) ? AppColors.primary : Colors.grey,
+                                        fontWeight: (_currentUser?.isSeller ?? false) ? FontWeight.bold : FontWeight.normal,
+                                      )
+                                    ),
                                   ],
                                 ),
                               ),
                               const Divider(indent: 20, endIndent: 20),
-                              _buildMoreItem(
-                                icon: Icons.book_outlined,
-                                text: "My Uploads",
-                                onTap: () {
-                                  Navigator.of(context, rootNavigator: true).pop();
-                                  context.push(AppRoutes.myUploads);
-                                },
-                              ),
+                              if (_currentUser?.isSeller ?? false)
+                                _buildMoreItem(
+                                  icon: Icons.book_outlined,
+                                  text: "My Uploads",
+                                  onTap: () {
+                                    Navigator.of(context, rootNavigator: true).pop();
+                                    context.push(AppRoutes.myUploads);
+                                  },
+                                ),
                               _buildMoreItem(
                                 icon: Icons.bookmark_border,
                                 text: "Saved Materials",
@@ -146,6 +212,10 @@ class _NavigationHostState extends State<NavigationHost> {
 
   @override
   Widget build(BuildContext context) {
+    if (_isLoading) {
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
+
     return PopScope(
       canPop: false,
       onPopInvokedWithResult: (didPop, result) {
@@ -183,30 +253,48 @@ class _NavigationHostState extends State<NavigationHost> {
               child: Icon(Icons.search, color: _index == 1 ? Colors.white : AppColors.primary),
               label: 'Search',
             ),
+            if (_currentUser?.isSeller ?? false)
+              CurvedNavigationBarItem(
+                child: Icon(Icons.add_circle_outline, color: _index == 2 ? Colors.white : AppColors.primary),
+                label: 'Sell',
+              ),
             CurvedNavigationBarItem(
-              child: Icon(Icons.add_circle_outline, color: _index == 2 ? Colors.white : AppColors.primary),
-              label: 'Sell',
-            ),
-            CurvedNavigationBarItem(
-              child: Icon(Icons.person_outline, color: _index == 3 ? Colors.white : AppColors.primary),
+              child: Icon(Icons.person_outline, color: ((_currentUser?.isSeller ?? false) ? _index == 3 : _index == 2) ? Colors.white : AppColors.primary),
               label: 'Profile',
             ),
             CurvedNavigationBarItem(
-              child: Icon(Icons.menu, color: _index == 4 ? Colors.white : AppColors.primary),
+              child: Icon(Icons.menu, color: ((_currentUser?.isSeller ?? false) ? _index == 4 : _index == 3) ? Colors.white : AppColors.primary),
               label: 'More',
             ),
           ],
           onTap: (index) async {
-            if (index == 4) {
-              await _openMoreMenuDialog();
-              return;
+            if (_currentUser?.isSeller ?? false) {
+              if (index == 4) {
+                await _openMoreMenuDialog();
+                return;
+              }
+            } else {
+              if (index == 3) {
+                await _openMoreMenuDialog();
+                return;
+              }
             }
             
             switch (index) {
               case 0: context.go(AppRoutes.homeRoute); break;
               case 1: context.go(AppRoutes.searchRoute); break;
-              case 2: context.go(AppRoutes.sellRoute); break;
-              case 3: context.go(AppRoutes.profileRoute); break;
+              case 2: 
+                if (_currentUser?.isSeller ?? false) {
+                  context.go(AppRoutes.sellRoute);
+                } else {
+                  context.go(AppRoutes.profileRoute);
+                }
+                break;
+              case 3: 
+                if (_currentUser?.isSeller ?? false) {
+                  context.go(AppRoutes.profileRoute);
+                }
+                break;
             }
           },
         ),

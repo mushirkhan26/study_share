@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../config/navigation/app_routes.dart';
 import '../../../config/theme/app_colors.dart';
+import '../../../core/api/network/auth_service.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/utils/ui_utils.dart';
 import '../../../core/utils/validation_utils.dart';
@@ -17,12 +18,32 @@ class _LoginScreenState extends State<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
-  bool _isPasswordVisible = false;
+  final AuthService _authService = AuthService();
 
-  void _handleLogin() {
+  bool _isPasswordVisible = false;
+  bool _isLoading = false;
+
+  Future<void> _handleLogin() async {
     if (_formKey.currentState!.validate()) {
-      UIUtils.showSnackBar(context, "Login Successful!");
-      context.go(AppRoutes.homeRoute);
+      setState(() => _isLoading = true);
+
+      final response = await _authService.login(
+        email: _emailController.text.trim(),
+        password: _passwordController.text,
+      );
+
+      setState(() => _isLoading = false);
+
+      if (response.success) {
+        if (mounted) {
+          UIUtils.showSnackBar(context, "Login Successful!");
+          context.go(AppRoutes.homeRoute);
+        }
+      } else {
+        if (mounted) {
+          UIUtils.showSnackBar(context, response.message ?? "Login failed", isError: true);
+        }
+      }
     }
   }
 
@@ -100,13 +121,15 @@ class _LoginScreenState extends State<LoginScreen> {
                   width: double.infinity,
                   height: 55,
                   child: ElevatedButton(
-                    onPressed: _handleLogin,
+                    onPressed: _isLoading ? null : _handleLogin,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.primary,
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                       elevation: 0,
                     ),
-                    child: const Text("Login", style: TextStyle(fontSize: 18, color: Colors.white, fontWeight: FontWeight.bold)),
+                    child: _isLoading 
+                      ? const CircularProgressIndicator(color: Colors.white)
+                      : const Text("Login", style: TextStyle(fontSize: 18, color: Colors.white, fontWeight: FontWeight.bold)),
                   ),
                 ),
 

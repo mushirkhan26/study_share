@@ -1,7 +1,9 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../widgets/book_card.dart';
 import '../../../config/navigation/app_routes.dart';
+import '../../../core/api/network/book_service.dart';
 
 class SearchScreen extends StatefulWidget {
   const SearchScreen({super.key});
@@ -11,40 +13,58 @@ class SearchScreen extends StatefulWidget {
 }
 
 class _SearchScreenState extends State<SearchScreen> {
+  final BookService _bookService = BookService();
+  
   // Filters state
   String _selectedCourse = 'All';
-  String _selectedSemester = 'All';
   String _searchQuery = '';
+  
+  List<dynamic> _books = [];
+  bool _isLoading = true;
+  Timer? _debounce;
 
-  final List<String> _courses = ['All', 'BCA', 'B.Tech', 'B.Sc', 'BA', 'B.Com'];
-  final List<String> _semesters = ['All', '1st Sem', '2nd Sem', '3rd Sem', '4th Sem', '5th Sem', '6th Sem'];
+  final List<String> _courses = ['All', 'BCA', 'B.Tech', 'B.Sc', 'BA', 'B.Com', 'Novels', 'Other'];
 
-  // Dummy Data for Search
-  final List<Map<String, dynamic>> _allBooks = [
-    {"title": "Let Us C", "author": "Yashavant Kanetkar", "sell": 150, "orig": 350, "cond": "Good", "course": "BCA", "sem": "1st Sem"},
-    {"title": "Data Structures in Java", "author": "Robert Lafore", "sell": 250, "orig": 600, "cond": "Like New", "course": "BCA", "sem": "3rd Sem"},
-    {"title": "Engineering Mathematics", "author": "H.K. Dass", "sell": 300, "orig": 750, "cond": "Old", "course": "B.Tech", "sem": "1st Sem"},
-    {"title": "Java: The Complete Reference", "author": "Herbert Schildt", "sell": 450, "orig": 900, "cond": "Like New", "course": "BCA", "sem": "4th Sem"},
-    {"title": "Python Programming", "author": "Reema Thareja", "sell": 200, "orig": 500, "cond": "Good", "course": "B.Sc", "sem": "2nd Sem"},
-    {"title": "Software Engineering", "author": "Sommerville", "sell": 350, "orig": 850, "cond": "Good", "course": "B.Tech", "sem": "4th Sem"},
-  ];
+  @override
+  void initState() {
+    super.initState();
+    _fetchBooks();
+  }
 
-  List<Map<String, dynamic>> get _filteredBooks {
-    return _allBooks.where((book) {
-      final matchesCourse = _selectedCourse == 'All' || book['course'] == _selectedCourse;
-      final matchesSem = _selectedSemester == 'All' || book['sem'] == _selectedSemester;
-      final matchesSearch = _searchQuery.isEmpty || 
-          book['title'].toLowerCase().contains(_searchQuery.toLowerCase()) ||
-          book['author'].toLowerCase().contains(_searchQuery.toLowerCase());
-      
-      return matchesCourse && matchesSem && matchesSearch;
-    }).toList();
+  @override
+  void dispose() {
+    _debounce?.cancel();
+    super.dispose();
+  }
+
+  Future<void> _fetchBooks() async {
+    setState(() => _isLoading = true);
+    final response = await _bookService.getAllBooks(
+      search: _searchQuery,
+      tag: _selectedCourse,
+    );
+    if (response.success && response.data != null) {
+      setState(() {
+        _books = response.data!;
+        _isLoading = false;
+      });
+    } else {
+      setState(() => _isLoading = false);
+    }
+  }
+
+  void _onSearchChanged(String query) {
+    if (_debounce?.isActive ?? false) _debounce?.cancel();
+    _debounce = Timer(const Duration(milliseconds: 500), () {
+      setState(() {
+        _searchQuery = query;
+      });
+      _fetchBooks();
+    });
   }
 
   @override
   Widget build(BuildContext context) {
-    final filteredResults = _filteredBooks;
-
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
@@ -52,15 +72,15 @@ class _SearchScreenState extends State<SearchScreen> {
         elevation: 0,
         title: const Text("Search Books", style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
         actions: [
-          if (_selectedCourse != 'All' || _selectedSemester != 'All' || _searchQuery.isNotEmpty)
+          if (_selectedCourse != 'All' || _searchQuery.isNotEmpty)
             IconButton(
               icon: const Icon(Icons.filter_alt_off_outlined, color: Color(0xFF00BFA5)),
               onPressed: () {
                 setState(() {
                   _selectedCourse = 'All';
-                  _selectedSemester = 'All';
                   _searchQuery = '';
                 });
+                _fetchBooks();
               },
             )
         ],
@@ -73,7 +93,7 @@ class _SearchScreenState extends State<SearchScreen> {
           children: [
             // 🔎 Search Bar
             TextField(
-              onChanged: (value) => setState(() => _searchQuery = value),
+              onChanged: _onSearchChanged,
               decoration: InputDecoration(
                 hintText: "Search by title or author...",
                 prefixIcon: const Icon(Icons.search, color: Color(0xFF00BFA5)),
@@ -88,7 +108,7 @@ class _SearchScreenState extends State<SearchScreen> {
             const SizedBox(height: 20),
 
             // 🎛️ Course Filters
-            const Text("Course", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+            const Text("Course / Category", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
             const SizedBox(height: 10),
             SingleChildScrollView(
               scrollDirection: Axis.horizontal,
@@ -96,60 +116,51 @@ class _SearchScreenState extends State<SearchScreen> {
                 children: _courses.map((course) => _buildFilterChip(
                   label: course,
                   isSelected: _selectedCourse == course,
-                  onTap: () => setState(() => _selectedCourse = course),
-                )).toList(),
-              ),
-            ),
-            const SizedBox(height: 15),
-
-            // 📚 Semester Filters
-            const Text("Semester", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-            const SizedBox(height: 10),
-            SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: Row(
-                children: _semesters.map((sem) => _buildFilterChip(
-                  label: sem,
-                  isSelected: _selectedSemester == sem,
-                  onTap: () => setState(() => _selectedSemester = sem),
+                  onTap: () {
+                    setState(() => _selectedCourse = course);
+                    _fetchBooks();
+                  },
                 )).toList(),
               ),
             ),
 
             const SizedBox(height: 25),
             Text(
-              "Results (${filteredResults.length} found)", 
+              _isLoading ? "Searching..." : "Results (${_books.length} found)", 
               style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.grey)
             ),
             const SizedBox(height: 15),
 
             // 📊 Search Results Grid
             Expanded(
-              child: filteredResults.isEmpty 
-                ? _buildEmptyResults()
-                : GridView.builder(
-                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 2,
-                      crossAxisSpacing: 15,
-                      mainAxisSpacing: 15,
-                      childAspectRatio: 0.65,
+              child: _isLoading 
+                ? const Center(child: CircularProgressIndicator())
+                : _books.isEmpty 
+                  ? _buildEmptyResults()
+                  : GridView.builder(
+                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: 2,
+                        crossAxisSpacing: 15,
+                        mainAxisSpacing: 15,
+                        childAspectRatio: 0.65,
+                      ),
+                      itemCount: _books.length,
+                      itemBuilder: (context, index) {
+                        final book = _books[index];
+                        return GestureDetector(
+                          onTap: () => context.push(AppRoutes.bookDetailRoute, extra: book),
+                          child: BookCard(
+                            title: book['title'],
+                            author: book['author'],
+                            sellingPrice: book['sellingPrice'].toInt(),
+                            originalPrice: book['originalPrice'].toInt(),
+                            condition: book['condition'],
+                            tag: book['tag'] ?? "Book",
+                            imageUrl: (book['images'] as List).isNotEmpty ? book['images'][0] : null,
+                          ),
+                        );
+                      },
                     ),
-                    itemCount: filteredResults.length,
-                    itemBuilder: (context, index) {
-                      final book = filteredResults[index];
-                      return GestureDetector(
-                        onTap: () => context.push(AppRoutes.bookDetailRoute),
-                        child: BookCard(
-                          title: book['title'],
-                          author: book['author'],
-                          sellingPrice: book['sell'],
-                          originalPrice: book['orig'],
-                          condition: book['cond'],
-                          tag: "${book['course']} ${book['sem']}",
-                        ),
-                      );
-                    },
-                  ),
             ),
             const SizedBox(height: 60),
           ],
@@ -165,7 +176,7 @@ class _SearchScreenState extends State<SearchScreen> {
         children: [
           Icon(Icons.search_off_rounded, size: 80, color: Colors.grey[300]),
           const SizedBox(height: 15),
-          const Text("No books found matching your filters.", style: TextStyle(color: Colors.grey, fontSize: 16)),
+          const Text("No books found matching your search.", style: TextStyle(color: Colors.grey, fontSize: 16)),
         ],
       ),
     );

@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../config/navigation/app_routes.dart';
 import '../../../config/theme/app_colors.dart';
+import '../../../core/api/network/auth_service.dart';
+import '../../../core/models/user_model.dart';
 import '../../../core/utils/ui_utils.dart';
 import '../../../core/utils/validation_utils.dart';
 
@@ -18,13 +20,36 @@ class _SignupScreenState extends State<SignupScreen> {
   final _emailController = TextEditingController();
   final _collegeController = TextEditingController();
   final _passwordController = TextEditingController();
+  final AuthService _authService = AuthService();
 
+  UserRole _selectedRole = UserRole.buyer;
   bool _isPasswordVisible = false;
+  bool _isLoading = false;
 
-  void _handleSignup() {
+  Future<void> _handleSignup() async {
     if (_formKey.currentState!.validate()) {
-      UIUtils.showSnackBar(context, "Account Created Successfully!");
-      context.go(AppRoutes.homeRoute);
+      setState(() => _isLoading = true);
+
+      final response = await _authService.signup(
+        username: _nameController.text.trim(),
+        email: _emailController.text.trim(),
+        password: _passwordController.text,
+        college: _collegeController.text.trim(),
+        role: _selectedRole,
+      );
+
+      setState(() => _isLoading = false);
+
+      if (response.success) {
+        if (mounted) {
+          UIUtils.showSnackBar(context, "Account Created Successfully!");
+          context.go(AppRoutes.homeRoute);
+        }
+      } else {
+        if (mounted) {
+          UIUtils.showSnackBar(context, response.message ?? "Signup failed", isError: true);
+        }
+      }
     }
   }
 
@@ -103,6 +128,34 @@ class _SignupScreenState extends State<SignupScreen> {
 
                 const SizedBox(height: 20),
 
+                // --- Role Selection ---
+                _buildFieldLabel("I want to"),
+                Row(
+                  children: [
+                    Expanded(
+                      child: _buildRoleCard(
+                        title: "Buy Books",
+                        icon: Icons.shopping_bag_outlined,
+                        role: UserRole.buyer,
+                        isSelected: _selectedRole == UserRole.buyer,
+                        onTap: () => setState(() => _selectedRole = UserRole.buyer),
+                      ),
+                    ),
+                    const SizedBox(width: 15),
+                    Expanded(
+                      child: _buildRoleCard(
+                        title: "Sell Books",
+                        icon: Icons.sell_outlined,
+                        role: UserRole.seller,
+                        isSelected: _selectedRole == UserRole.seller,
+                        onTap: () => setState(() => _selectedRole = UserRole.seller),
+                      ),
+                    ),
+                  ],
+                ),
+
+                const SizedBox(height: 20),
+
                 // --- Password ---
                 _buildFieldLabel("Password"),
                 TextFormField(
@@ -124,13 +177,15 @@ class _SignupScreenState extends State<SignupScreen> {
                   width: double.infinity,
                   height: 55,
                   child: ElevatedButton(
-                    onPressed: _handleSignup,
+                    onPressed: _isLoading ? null : _handleSignup,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.primary,
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                       elevation: 0,
                     ),
-                    child: const Text("Sign Up", style: TextStyle(fontSize: 18, color: Colors.white, fontWeight: FontWeight.bold)),
+                    child: _isLoading 
+                      ? const CircularProgressIndicator(color: Colors.white)
+                      : const Text("Sign Up", style: TextStyle(fontSize: 18, color: Colors.white, fontWeight: FontWeight.bold)),
                   ),
                 ),
 
@@ -171,6 +226,47 @@ class _SignupScreenState extends State<SignupScreen> {
       fillColor: Colors.grey[100],
       border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
       contentPadding: const EdgeInsets.symmetric(vertical: 16),
+    );
+  }
+
+  Widget _buildRoleCard({
+    required String title,
+    required IconData icon,
+    required UserRole role,
+    required bool isSelected,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(vertical: 15),
+        decoration: BoxDecoration(
+          color: isSelected ? AppColors.primary.withValues(alpha: 0.1) : Colors.grey[50],
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: isSelected ? AppColors.primary : Colors.grey[300]!,
+            width: 2,
+          ),
+        ),
+        child: Column(
+          children: [
+            Icon(
+              icon,
+              color: isSelected ? AppColors.primary : Colors.grey,
+              size: 28,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              title,
+              style: TextStyle(
+                color: isSelected ? AppColors.primary : Colors.grey[700],
+                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

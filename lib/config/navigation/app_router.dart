@@ -11,6 +11,7 @@ import '../../features/home/screens/book_detail_screen.dart';
 import '../../features/search/screens/search_screen.dart';
 import '../../features/sell/screens/sell_book_screen.dart';
 import '../../features/chat/screens/chat_screen.dart';
+import '../../features/chat/screens/inbox_screen.dart';
 import '../../features/profile/screens/profile_screen.dart';
 import '../../features/profile/screens/edit_profile_screen.dart';
 import '../../features/notifications/screens/notifications_screen.dart';
@@ -22,6 +23,7 @@ import '../../features/settings/screens/privacy_policy_screen.dart';
 import '../../features/settings/screens/about_app_screen.dart';
 import '../../features/profile/screens/my_uploads_screen.dart';
 import '../../features/profile/screens/saved_materials_screen.dart';
+import '../../features/home/screens/study_materials_screen.dart';
 import '../../features/settings/screens/settings_screen.dart';
 
 // Import NavigationHost
@@ -83,11 +85,25 @@ final GoRouter appRouter = GoRouter(
     // ================= INNER SCREENS (Without Bottom Bar) =================
     GoRoute(
       path: AppRoutes.bookDetailRoute,
-      builder: (context, state) => const BookDetailScreen(),
+      builder: (context, state) {
+        final book = state.extra as Map<String, dynamic>?;
+        return BookDetailScreen(bookData: book);
+      },
+    ),
+    GoRoute(
+      path: AppRoutes.studyMaterialsRoute,
+      builder: (context, state) => const StudyMaterialsScreen(),
     ),
     GoRoute(
       path: AppRoutes.chatRoute,
-      builder: (context, state) => const ChatScreen(),
+      builder: (context, state) {
+        final bookData = state.extra as Map<String, dynamic>?;
+        return ChatScreen(bookData: bookData);
+      },
+    ),
+    GoRoute(
+      path: AppRoutes.inboxRoute,
+      builder: (context, state) => const InboxScreen(),
     ),
     GoRoute(
       path: AppRoutes.myUploads,

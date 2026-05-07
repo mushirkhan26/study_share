@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../config/theme/app_colors.dart';
 import '../../../config/navigation/app_routes.dart';
+import '../../../core/services/secure_storage_service.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
@@ -153,9 +154,13 @@ class SettingsScreen extends StatelessWidget {
             child: const Text("Cancel", style: TextStyle(color: Colors.grey)),
           ),
           ElevatedButton(
-            onPressed: () {
-              Navigator.of(context, rootNavigator: true).pop();
-              context.go(AppRoutes.loginRoute);
+            onPressed: () async {
+              final SecureStorageService storage = SecureStorageService();
+              await storage.logout();
+              if (context.mounted) {
+                Navigator.of(context, rootNavigator: true).pop();
+                context.go(AppRoutes.loginRoute);
+              }
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.red,

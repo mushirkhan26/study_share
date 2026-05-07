@@ -3,14 +3,14 @@ import 'dart:io';
 
 import 'package:http/http.dart' as http;
 
+import '../../constants/app_constants.dart';
 import '../../errors/app_exception.dart';
 import '../../services/logger_service.dart';
 import '../../services/secure_storage_service.dart';
 import 'api_response.dart';
 
 class ApiHelper {
-  static const String _defaultBaseUrl = "";
-  // static String baseUrl2 = "";
+  static const String _defaultBaseUrl = AppConstants.apiBaseUrl;
 
   static const String otherBaseUrl =
       "https://hrms-socket.onrender.com/"; // Replace with your mail service base URL

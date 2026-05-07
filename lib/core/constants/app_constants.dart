@@ -3,9 +3,10 @@ class AppConstants {
   static const String appName = 'Study Share'; // Updated Name
   static const String appVersion = '1.0.0';
 
-  // URLs
-  // static const String socketBaseUrl = "https://hrms-socket.onrender.com";
-  // static const String apiBaseUrl = "https://kudr3e0ick.execute-api.us-east-1.amazonaws.com/";
+  // API Configuration
+  static const String serverIp = "192.168.1.136"; // IMPORTANT: Update this to your current local IP
+  static const String apiBaseUrl = "http://$serverIp:5000/api/";
+  static const String socketBaseUrl = "http://$serverIp:5000";
 
   // Assets (Images & Icons)
   static const String baseImg = "assets/images";

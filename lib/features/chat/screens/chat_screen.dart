@@ -1,15 +1,15 @@
 import 'package:flutter/material.dart';
+import '../../../core/api/network/chat_service.dart';
+import '../../../core/api/network/socket_service.dart';
+import '../../../core/services/secure_storage_service.dart';
+import 'package:intl/intl.dart';
 
 class ChatScreen extends StatefulWidget {
-  final String sellerName;
-  final String bookTitle;
-  final int bookPrice;
+  final Map<String, dynamic>? bookData;
 
   const ChatScreen({
     super.key,
-    this.sellerName = "Amit Kumar", // Dummy default
-    this.bookTitle = "Let Us C", // Dummy default
-    this.bookPrice = 150, // Dummy default
+    this.bookData,
   });
 
   @override
@@ -18,31 +18,123 @@ class ChatScreen extends StatefulWidget {
 
 class _ChatScreenState extends State<ChatScreen> {
   final TextEditingController _messageController = TextEditingController();
+  final ChatService _chatService = ChatService();
+  final SocketService _socketService = SocketService();
+  final SecureStorageService _storage = SecureStorageService();
 
-  // Dummy messages list
-  final List<Map<String, dynamic>> _messages = [
-    {"text": "Hi Amit, is 'Let Us C' still available?", "isMe": true, "time": "10:30 AM"},
-    {"text": "Yes bhai, it's available.", "isMe": false, "time": "10:32 AM"},
-    {"text": "Is the price negotiable? 150 is a bit high for me.", "isMe": true, "time": "10:33 AM"},
-  ];
+  String? _conversationId;
+  String? _currentUserId;
+  List<dynamic> _messages = [];
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _socketService.initSocket();
+    _setupChat();
+  }
+
+  Future<void> _setupChat() async {
+    final userData = await _storage.getUserData();
+    _currentUserId = userData?['userId'];
+
+    if (widget.bookData != null) {
+      if (widget.bookData!['conversationId'] != null) {
+        _conversationId = widget.bookData!['conversationId'];
+      } else {
+        // Try multiple ways to get sellerId
+        final sellerId = widget.bookData!['sellerId'] ?? 
+                         widget.bookData!['seller']?['id'] ?? 
+                         widget.bookData!['seller']?['_id'];
+        final bookId = widget.bookData!['id'];
+
+        if (sellerId == null || bookId == null) {
+          print('Chat Error: Missing sellerId ($sellerId) or bookId ($bookId)');
+          setState(() => _isLoading = false);
+          return;
+        }
+
+        final response = await _chatService.getOrCreateConversation(sellerId, bookId);
+        if (response.success && response.data != null) {
+          _conversationId = response.data!['id'];
+        } else {
+          print('Chat Error: Failed to get/create conversation: ${response.message}');
+        }
+      }
+
+      if (_conversationId != null) {
+        print('Joining chat conversation: $_conversationId');
+        // Set active chat ID to prevent redundant notifications
+        _socketService.activeConversationId = _conversationId;
+        
+        _socketService.joinChat(_conversationId!);
+        
+        // Mark messages as read
+        _chatService.markAsRead(_conversationId!);
+        
+        final messagesResponse = await _chatService.getMessages(_conversationId!);
+        if (messagesResponse.success) {
+          setState(() {
+            _messages = messagesResponse.data!;
+            _isLoading = false;
+          });
+        } else {
+          setState(() => _isLoading = false);
+        }
+      } else {
+        setState(() => _isLoading = false);
+      }
+    } else {
+      setState(() => _isLoading = false);
+    }
+
+    _socketService.onMessageReceived(_onNewMessage);
+  }
+
+  void _onNewMessage(dynamic data) {
+    if (mounted) {
+      setState(() {
+        if (!_messages.any((m) => m['id'] == data['id'])) {
+          _messages.add(data);
+          // Mark as read if we are in the chat
+          _chatService.markAsRead(_conversationId!);
+        }
+      });
+    }
+  }
 
   void _sendMessage() {
-    if (_messageController.text.trim().isEmpty) return;
+    if (_messageController.text.trim().isEmpty || _conversationId == null || _currentUserId == null) return;
 
-    setState(() {
-      _messages.add({
-        "text": _messageController.text,
-        "isMe": true,
-        "time": "10:38 AM" // Currently fixed, will be dynamic later
-      });
-      _messageController.clear();
-    });
+    _socketService.sendMessage(
+      _conversationId!,
+      _currentUserId!,
+      _messageController.text.trim(),
+    );
+    _messageController.clear();
+  }
 
-    // Yahan aage chalkar aapka Socket.io wala logic aayega (emit message)
+  @override
+  void dispose() {
+    // Clear active chat tracking
+    _socketService.activeConversationId = null;
+    _socketService.removeMessageListener(_onNewMessage);
+    _messageController.dispose();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    String otherName = "Chat";
+    if (widget.bookData?['conversationId'] != null) {
+      otherName = widget.bookData?['otherUser']?['username'] ?? "User";
+    } else {
+      otherName = widget.bookData?['seller']?['username'] ?? "Seller";
+    }
+
+    final bookTitle = widget.bookData?['title'] ?? "Book";
+    final bookPrice = widget.bookData?['sellingPrice'] ?? 0;
+
     return Scaffold(
       backgroundColor: Colors.grey[100],
       appBar: AppBar(
@@ -54,66 +146,52 @@ class _ChatScreenState extends State<ChatScreen> {
             CircleAvatar(
               radius: 18,
               backgroundColor: const Color(0xFF00BFA5).withValues(alpha: 0.2),
-              child: const Text("A", style: TextStyle(color: Color(0xFF00BFA5), fontWeight: FontWeight.bold)),
+              child: Text(otherName[0].toUpperCase(), style: const TextStyle(color: Color(0xFF00BFA5), fontWeight: FontWeight.bold)),
             ),
             const SizedBox(width: 10),
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(widget.sellerName, style: const TextStyle(color: Colors.black, fontSize: 16, fontWeight: FontWeight.bold)),
+                Text(otherName, style: const TextStyle(color: Colors.black, fontSize: 16, fontWeight: FontWeight.bold)),
                 const Text("Online", style: TextStyle(color: Colors.green, fontSize: 12)),
               ],
             ),
           ],
         ),
       ),
-      body: Column(
+      body: _isLoading 
+        ? const Center(child: CircularProgressIndicator())
+        : Column(
         children: [
-          // 📦 Ad Banner (Jiske bare mein chat ho rahi hai)
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 10),
             margin: const EdgeInsets.all(10),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: Colors.grey.shade300),
-            ),
+            decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(10), border: Border.all(color: Colors.grey.shade300)),
             child: Row(
               children: [
-                Container(
-                  height: 40,
-                  width: 30,
-                  decoration: BoxDecoration(color: Colors.grey[200], borderRadius: BorderRadius.circular(4)),
-                  child: const Icon(Icons.book, size: 20, color: Colors.grey),
-                ),
+                const Icon(Icons.book, size: 20, color: Colors.grey),
                 const SizedBox(width: 10),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(widget.bookTitle, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-                      Text("₹${widget.bookPrice}", style: const TextStyle(color: Color(0xFF00BFA5), fontWeight: FontWeight.bold)),
+                      Text(bookTitle, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                      Text("₹$bookPrice", style: const TextStyle(color: Color(0xFF00BFA5), fontWeight: FontWeight.bold)),
                     ],
                   ),
                 ),
-                TextButton(
-                  onPressed: () {
-                    // View Ad Details logic
-                  },
-                  child: const Text("View Ad", style: TextStyle(color: Color(0xFF00BFA5))),
-                )
               ],
             ),
           ),
-
-          // 💬 Chat Messages
           Expanded(
             child: ListView.builder(
               padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 10),
               itemCount: _messages.length,
               itemBuilder: (context, index) {
                 final msg = _messages[index];
-                final isMe = msg['isMe'];
+                final isMe = msg['senderId'] == _currentUserId;
+                final timeStr = msg['createdAt'];
+                final time = timeStr != null ? DateFormat('hh:mm a').format(DateTime.parse(timeStr).toLocal()) : "";
 
                 return Align(
                   alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
@@ -132,15 +210,9 @@ class _ChatScreenState extends State<ChatScreen> {
                     child: Column(
                       crossAxisAlignment: isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          msg['text'],
-                          style: TextStyle(color: isMe ? Colors.white : Colors.black87, fontSize: 15),
-                        ),
+                        Text(msg['text'] ?? "", style: TextStyle(color: isMe ? Colors.white : Colors.black87, fontSize: 15)),
                         const SizedBox(height: 3),
-                        Text(
-                          msg['time'],
-                          style: TextStyle(color: isMe ? Colors.white70 : Colors.grey, fontSize: 10),
-                        ),
+                        Text(time, style: TextStyle(color: isMe ? Colors.white70 : Colors.grey, fontSize: 10)),
                       ],
                     ),
                   ),
@@ -148,42 +220,35 @@ class _ChatScreenState extends State<ChatScreen> {
               },
             ),
           ),
-
-          // ⌨️ Message Input Field
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
             decoration: const BoxDecoration(color: Colors.white),
-            child: Row(
-              children: [
-                IconButton(
-                  icon: const Icon(Icons.attach_file, color: Colors.grey),
-                  onPressed: () {},
-                ),
-                Expanded(
-                  child: TextField(
-                    controller: _messageController,
-                    decoration: InputDecoration(
-                      hintText: "Type a message...",
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(20),
-                        borderSide: BorderSide.none,
+            child: SafeArea(
+              child: Row(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: _messageController,
+                      decoration: InputDecoration(
+                        hintText: "Type a message...",
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(20), borderSide: BorderSide.none),
+                        filled: true,
+                        fillColor: Colors.grey[100],
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 15, vertical: 10),
                       ),
-                      filled: true,
-                      fillColor: Colors.grey[100],
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 15, vertical: 10),
                     ),
                   ),
-                ),
-                const SizedBox(width: 8),
-                CircleAvatar(
-                  backgroundColor: const Color(0xFF00BFA5),
-                  radius: 22,
-                  child: IconButton(
-                    icon: const Icon(Icons.send, color: Colors.white, size: 20),
-                    onPressed: _sendMessage,
+                  const SizedBox(width: 8),
+                  CircleAvatar(
+                    backgroundColor: const Color(0xFF00BFA5),
+                    radius: 22,
+                    child: IconButton(
+                      icon: const Icon(Icons.send, color: Colors.white, size: 20),
+                      onPressed: _sendMessage,
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ],
