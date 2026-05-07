@@ -4,9 +4,8 @@ class AppConstants {
   static const String appVersion = '1.0.0';
 
   // API Configuration
-  static const String serverIp = "192.168.1.136"; // IMPORTANT: Update this to your current local IP
-  static const String apiBaseUrl = "http://$serverIp:5000/api/";
-  static const String socketBaseUrl = "http://$serverIp:5000";
+  static const String apiBaseUrl = "https://study-share-cvkc.onrender.com/api/";
+  static const String socketBaseUrl = "https://study-share-cvkc.onrender.com";
 
   // Assets (Images & Icons)
   static const String baseImg = "assets/images";
