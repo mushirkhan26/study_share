@@ -144,7 +144,7 @@ class ChatProvider extends ChangeNotifier {
   Future<String?> getOrCreateConversation(String sellerId, String bookId) async {
     final response = await _chatService.getOrCreateConversation(sellerId, bookId);
     if (response.success && response.data != null) {
-      return response.data!['_id'];
+      return response.data!['id'] ?? response.data!['_id'];
     }
     return null;
   }
