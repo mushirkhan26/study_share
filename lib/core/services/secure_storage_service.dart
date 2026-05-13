@@ -15,6 +15,12 @@ class SecureStorageService {
   static const String _keyProfileImage = 'profile_image';
   static const String _keyRole = 'user_role';
   static const String _keyCollege = 'college';
+  static const String _keyPhone = 'phone_number';
+  static const String _keyTheme = 'theme_mode';
+  static const String _key2FA = 'is_2fa_enabled';
+  static const String _keyPrivateProfile = 'is_private_profile';
+  static const String _keyShowPhone = 'show_phone_number';
+  static const String _keyLanguage = 'language_code';
 
   /// ✅ User Data Save Karein (Login ke baad)
   Future<void> saveUserData({
@@ -25,6 +31,10 @@ class SecureStorageService {
     required String role,
     String? profileImage,
     String? college,
+    String? phoneNumber,
+    bool? isTwoFactorEnabled,
+    bool? isPrivateProfile,
+    bool? showPhoneNumber,
   }) async {
     await _secureStorage.write(key: _keyToken, value: token);
     await _secureStorage.write(key: _keyUserId, value: userId);
@@ -36,6 +46,18 @@ class SecureStorageService {
     }
     if (college != null) {
       await _secureStorage.write(key: _keyCollege, value: college);
+    }
+    if (phoneNumber != null) {
+      await _secureStorage.write(key: _keyPhone, value: phoneNumber);
+    }
+    if (isTwoFactorEnabled != null) {
+      await _secureStorage.write(key: _key2FA, value: isTwoFactorEnabled.toString());
+    }
+    if (isPrivateProfile != null) {
+      await _secureStorage.write(key: _keyPrivateProfile, value: isPrivateProfile.toString());
+    }
+    if (showPhoneNumber != null) {
+      await _secureStorage.write(key: _keyShowPhone, value: showPhoneNumber.toString());
     }
   }
 
@@ -54,6 +76,10 @@ class SecureStorageService {
       "role": await _secureStorage.read(key: _keyRole),
       "profileImage": await _secureStorage.read(key: _keyProfileImage),
       "college": await _secureStorage.read(key: _keyCollege),
+      "phoneNumber": await _secureStorage.read(key: _keyPhone),
+      "isTwoFactorEnabled": await _secureStorage.read(key: _key2FA),
+      "isPrivateProfile": await _secureStorage.read(key: _keyPrivateProfile),
+      "showPhoneNumber": await _secureStorage.read(key: _keyShowPhone),
     };
   }
 
@@ -69,4 +95,12 @@ class SecureStorageService {
   // Individual Getters
   Future<String?> getUsername() async => await _secureStorage.read(key: _keyUsername);
   Future<String?> getUserId() async => await _secureStorage.read(key: _keyUserId);
+
+  /// 🎨 Theme Management
+  Future<void> saveThemeMode(String theme) async => await _secureStorage.write(key: _keyTheme, value: theme);
+  Future<String?> getThemeMode() async => await _secureStorage.read(key: _keyTheme);
+
+  /// 🌍 Language Management
+  Future<void> saveLanguageCode(String code) async => await _secureStorage.write(key: _keyLanguage, value: code);
+  Future<String?> getLanguageCode() async => await _secureStorage.read(key: _keyLanguage);
 }

@@ -45,7 +45,7 @@ const Book = sequelize.define('Book', {
 });
 
 // Associations
-User.hasMany(Book, { foreignKey: 'sellerId', as: 'books' });
+User.hasMany(Book, { foreignKey: 'sellerId', as: 'books', onDelete: 'CASCADE' });
 Book.belongsTo(User, { foreignKey: 'sellerId', as: 'seller' });
 
 module.exports = Book;

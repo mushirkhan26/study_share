@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../l10n/app_localizations.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import '../../../config/navigation/app_routes.dart';
@@ -34,12 +35,14 @@ class SignupScreen extends StatelessWidget {
 
       if (success) {
         if (context.mounted) {
-          UIUtils.showSnackBar(context, "Account Created Successfully!");
+          final l10n = AppLocalizations.of(context)!;
+          UIUtils.showSnackBar(context, l10n.accountCreated);
           context.go(AppRoutes.homeRoute);
         }
       } else {
         if (context.mounted) {
-          UIUtils.showSnackBar(context, "Signup failed", isError: true);
+          final l10n = AppLocalizations.of(context)!;
+          UIUtils.showSnackBar(context, l10n.signupFailed, isError: true);
         }
       }
     }
@@ -47,10 +50,12 @@ class SignupScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context)!;
     final authProvider = Provider.of<AuthProvider>(context);
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: theme.scaffoldBackgroundColor,
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 24.0),
@@ -60,45 +65,48 @@ class SignupScreen extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const SizedBox(height: 10),
-                const Text("Create Account",
-                    style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Colors.black87)),
-                const Text("Join the Study Share community",
-                    style: TextStyle(fontSize: 16, color: Colors.grey)),
+                Text(l10n.createAccount,
+                    style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: theme.textTheme.titleLarge?.color)),
+                Text(l10n.joinCommunity,
+                    style: TextStyle(fontSize: 16, color: theme.hintColor)),
 
                 const SizedBox(height: 35),
 
                 // --- Full Name ---
-                _buildFieldLabel("Full Name"),
+                _buildFieldLabel(l10n.fullName),
                 TextFormField(
                   controller: _nameController,
-                  decoration: _inputDecoration("Enter your name", Icons.person_outline),
-                  validator: (v) => v!.isEmpty ? "Name is required" : null,
+                  style: TextStyle(color: theme.textTheme.bodyLarge?.color),
+                  decoration: _inputDecoration(l10n.enterName, Icons.person_outline, theme),
+                  validator: (v) => v!.isEmpty ? l10n.nameRequired : null,
                 ),
 
                 const SizedBox(height: 20),
 
                 // --- Email ---
-                _buildFieldLabel("Email Address"),
+                _buildFieldLabel(l10n.emailAddress),
                 TextFormField(
                   controller: _emailController,
                   keyboardType: TextInputType.emailAddress,
-                  decoration: _inputDecoration("Enter your email", Icons.email_outlined),
+                  style: TextStyle(color: theme.textTheme.bodyLarge?.color),
+                  decoration: _inputDecoration(l10n.enterEmail, Icons.email_outlined, theme),
                   validator: ValidationUtils.validateEmail,
                 ),
 
                 const SizedBox(height: 20),
 
                 // --- College Name (Special for BCA/Jodhpur Context) ---
-                _buildFieldLabel("College/University"),
+                _buildFieldLabel(l10n.college),
                 TextFormField(
                   controller: _collegeController,
-                  decoration: _inputDecoration("Enter college name", Icons.school_outlined),
+                  style: TextStyle(color: theme.textTheme.bodyLarge?.color),
+                  decoration: _inputDecoration(l10n.enterCollege, Icons.school_outlined, theme),
                 ),
 
                 const SizedBox(height: 20),
 
                 // --- Role Selection ---
-                _buildFieldLabel("I want to"),
+                _buildFieldLabel(l10n.iWantTo),
                 ValueListenableBuilder<UserRole>(
                   valueListenable: _selectedRole,
                   builder: (context, role, child) {
@@ -106,21 +114,23 @@ class SignupScreen extends StatelessWidget {
                       children: [
                         Expanded(
                           child: _buildRoleCard(
-                            title: "Buy Books",
+                            title: l10n.buyBooks,
                             icon: Icons.shopping_bag_outlined,
                             role: UserRole.buyer,
                             isSelected: role == UserRole.buyer,
                             onTap: () => _selectedRole.value = UserRole.buyer,
+                            theme: theme,
                           ),
                         ),
                         const SizedBox(width: 15),
                         Expanded(
                           child: _buildRoleCard(
-                            title: "Sell Books",
+                            title: l10n.sellBooks,
                             icon: Icons.sell_outlined,
                             role: UserRole.seller,
                             isSelected: role == UserRole.seller,
                             onTap: () => _selectedRole.value = UserRole.seller,
+                            theme: theme,
                           ),
                         ),
                       ],
@@ -131,14 +141,15 @@ class SignupScreen extends StatelessWidget {
                 const SizedBox(height: 20),
 
                 // --- Password ---
-                _buildFieldLabel("Password"),
+                _buildFieldLabel(l10n.password),
                 ValueListenableBuilder<bool>(
                   valueListenable: _isPasswordVisible,
                   builder: (context, visible, child) {
                     return TextFormField(
                       controller: _passwordController,
                       obscureText: !visible,
-                      decoration: _inputDecoration("Create password", Icons.lock_outline).copyWith(
+                      style: TextStyle(color: theme.textTheme.bodyLarge?.color),
+                      decoration: _inputDecoration(l10n.createPassword, Icons.lock_outline, theme).copyWith(
                         suffixIcon: IconButton(
                           icon: Icon(visible ? Icons.visibility : Icons.visibility_off),
                           onPressed: () => _isPasswordVisible.value = !visible,
@@ -164,7 +175,7 @@ class SignupScreen extends StatelessWidget {
                     ),
                     child: authProvider.isLoading 
                       ? const CircularProgressIndicator(color: Colors.white)
-                      : const Text("Sign Up", style: TextStyle(fontSize: 18, color: Colors.white, fontWeight: FontWeight.bold)),
+                      : Text(l10n.signUp, style: const TextStyle(fontSize: 18, color: Colors.white, fontWeight: FontWeight.bold)),
                   ),
                 ),
 
@@ -174,10 +185,10 @@ class SignupScreen extends StatelessWidget {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Text("Already have an account?"),
+                    Text(l10n.alreadyHaveAccount, style: TextStyle(color: theme.textTheme.bodyMedium?.color)),
                     TextButton(
                       onPressed: () => context.pop(), // Wapas Login par
-                      child: const Text("Login", style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold)),
+                      child: Text(l10n.login, style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold)),
                     ),
                   ],
                 ),
@@ -197,12 +208,13 @@ class SignupScreen extends StatelessWidget {
     );
   }
 
-  InputDecoration _inputDecoration(String hint, IconData icon) {
+  InputDecoration _inputDecoration(String hint, IconData icon, ThemeData theme) {
     return InputDecoration(
       hintText: hint,
+      hintStyle: TextStyle(color: theme.hintColor),
       prefixIcon: Icon(icon, color: AppColors.primary, size: 22),
       filled: true,
-      fillColor: Colors.grey[100],
+      fillColor: theme.brightness == Brightness.dark ? Colors.grey[900] : Colors.grey[100],
       border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
       contentPadding: const EdgeInsets.symmetric(vertical: 16),
     );
@@ -214,6 +226,7 @@ class SignupScreen extends StatelessWidget {
     required UserRole role,
     required bool isSelected,
     required VoidCallback onTap,
+    required ThemeData theme,
   }) {
     return GestureDetector(
       onTap: onTap,
@@ -221,10 +234,10 @@ class SignupScreen extends StatelessWidget {
         duration: const Duration(milliseconds: 200),
         padding: const EdgeInsets.symmetric(vertical: 15),
         decoration: BoxDecoration(
-          color: isSelected ? AppColors.primary.withValues(alpha: 0.1) : Colors.grey[50],
+          color: isSelected ? AppColors.primary.withValues(alpha: 0.1) : (theme.brightness == Brightness.dark ? Colors.grey[900] : Colors.grey[50]),
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: isSelected ? AppColors.primary : Colors.grey[300]!,
+            color: isSelected ? AppColors.primary : theme.dividerColor,
             width: 2,
           ),
         ),
@@ -232,14 +245,14 @@ class SignupScreen extends StatelessWidget {
           children: [
             Icon(
               icon,
-              color: isSelected ? AppColors.primary : Colors.grey,
+              color: isSelected ? AppColors.primary : theme.hintColor,
               size: 28,
             ),
             const SizedBox(height: 8),
             Text(
               title,
               style: TextStyle(
-                color: isSelected ? AppColors.primary : Colors.grey[700],
+                color: isSelected ? AppColors.primary : theme.hintColor,
                 fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
               ),
             ),

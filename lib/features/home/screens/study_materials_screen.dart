@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:provider/provider.dart';
+import '../../../l10n/app_localizations.dart';
 import '../../../core/providers/material_provider.dart';
 import '../../../widgets/note_card.dart';
 import '../../../widgets/skeleton_loaders.dart';
@@ -12,6 +13,8 @@ class StudyMaterialsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context)!;
     final materialProvider = Provider.of<MaterialProvider>(context);
 
     // Initial fetch
@@ -22,12 +25,12 @@ class StudyMaterialsScreen extends StatelessWidget {
     });
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        title: const Text("Study Materials", style: TextStyle(fontWeight: FontWeight.bold)),
-        backgroundColor: Colors.white,
+        title: Text(l10n.studyMaterials, style: const TextStyle(fontWeight: FontWeight.bold)),
+        backgroundColor: theme.scaffoldBackgroundColor,
         elevation: 0,
-        iconTheme: const IconThemeData(color: Colors.black),
+        iconTheme: IconThemeData(color: theme.brightness == Brightness.dark ? Colors.white : Colors.black),
       ),
       body: materialProvider.isLoading && materialProvider.materials.isEmpty
           ? ListView.builder(
@@ -36,7 +39,7 @@ class StudyMaterialsScreen extends StatelessWidget {
               itemBuilder: (context, index) => const NoteCardSkeleton(),
             )
           : materialProvider.materials.isEmpty
-              ? _buildEmptyState()
+              ? _buildEmptyState(theme, l10n)
               : RefreshIndicator(
                   onRefresh: () => materialProvider.fetchMaterials(),
                   child: ListView.builder(
@@ -60,7 +63,7 @@ class StudyMaterialsScreen extends StatelessWidget {
                               } catch (e2) {
                                 if (context.mounted) {
                                   ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(content: Text("No app found to open this file")),
+                                    SnackBar(content: Text(l10n.noAppToOpenFile)),
                                   );
                                 }
                               }
@@ -72,14 +75,15 @@ class StudyMaterialsScreen extends StatelessWidget {
                   ),
                 ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () => _showUploadDialog(context),
+        onPressed: () => _showUploadDialog(context, l10n),
         backgroundColor: const Color(0xFF00BFA5),
         child: const Icon(Icons.add, color: Colors.white),
       ),
     );
   }
 
-  void _showUploadDialog(BuildContext context) {
+  void _showUploadDialog(BuildContext context, AppLocalizations l10n) {
+    final theme = Theme.of(context);
     final titleController = TextEditingController();
     final subjectController = TextEditingController();
     final ValueNotifier<File?> selectedFile = ValueNotifier<File?>(null);
@@ -88,6 +92,7 @@ class StudyMaterialsScreen extends StatelessWidget {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
+      backgroundColor: theme.scaffoldBackgroundColor,
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(25))),
       builder: (context) => Padding(
         padding: EdgeInsets.only(
@@ -101,13 +106,13 @@ class StudyMaterialsScreen extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text("Upload Study Material", style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+              Text(l10n.uploadStudyMaterial, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
               const SizedBox(height: 20),
-              _buildModalTextField("Title", "e.g. Java Notes", titleController),
+              _buildModalTextField(l10n.bookTitle, l10n.titleHint, titleController, theme),
               const SizedBox(height: 15),
-              _buildModalTextField("Subject", "e.g. Computer Science", subjectController),
+              _buildModalTextField(l10n.subject, l10n.subjectHint, subjectController, theme),
               const SizedBox(height: 15),
-              const Text("Type", style: TextStyle(fontWeight: FontWeight.bold)),
+              Text(l10n.type, style: const TextStyle(fontWeight: FontWeight.bold)),
               ValueListenableBuilder<String>(
                 valueListenable: selectedType,
                 builder: (context, type, child) {
@@ -118,13 +123,13 @@ class StudyMaterialsScreen extends StatelessWidget {
                         groupValue: type,
                         onChanged: (v) => selectedType.value = v!,
                       ),
-                      const Text("PDF"),
+                      Text(l10n.pdf),
                       Radio<String>(
                         value: 'Image',
                         groupValue: type,
                         onChanged: (v) => selectedType.value = v!,
                       ),
-                      const Text("Image"),
+                      Text(l10n.image),
                     ],
                   );
                 }
@@ -152,17 +157,17 @@ class StudyMaterialsScreen extends StatelessWidget {
                       height: 100,
                       width: double.infinity,
                       decoration: BoxDecoration(
-                        color: Colors.grey[100],
+                        color: theme.brightness == Brightness.dark ? Colors.grey[900] : Colors.grey[100],
                         borderRadius: BorderRadius.circular(15),
-                        border: Border.all(color: Colors.grey.shade300),
+                        border: Border.all(color: theme.dividerColor),
                       ),
                       child: file != null
-                          ? Center(child: Text("File Selected: ${file.path.split('/').last}"))
-                          : const Column(
+                          ? Center(child: Text(l10n.fileSelected(file.path.split('/').last)))
+                          : Column(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                Icon(Icons.upload_file, color: Color(0xFF00BFA5)),
-                                Text("Tap to select file (Image/PDF)", style: TextStyle(fontSize: 12)),
+                                const Icon(Icons.upload_file, color: Color(0xFF00BFA5)),
+                                Text(l10n.tapToSelectFile, style: const TextStyle(fontSize: 12)),
                               ],
                             ),
                     );
@@ -178,7 +183,7 @@ class StudyMaterialsScreen extends StatelessWidget {
                     return ElevatedButton(
                       onPressed: provider.isLoading ? null : () async {
                         if (titleController.text.isEmpty || subjectController.text.isEmpty || selectedFile.value == null) {
-                          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("All fields are required")));
+                          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.allFieldsRequired)));
                           return;
                         }
 
@@ -191,15 +196,15 @@ class StudyMaterialsScreen extends StatelessWidget {
 
                         if (success && context.mounted) {
                           Navigator.pop(context);
-                          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Material Uploaded!")));
+                          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.materialUploaded)));
                         } else if (context.mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Upload failed")));
+                          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.uploadFailed)));
                         }
                       },
                       style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF00BFA5)),
                       child: provider.isLoading 
                         ? const CircularProgressIndicator(color: Colors.white)
-                        : const Text("Upload Now", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                        : Text(l10n.uploadNow, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
                     );
                   }
                 ),
@@ -212,7 +217,7 @@ class StudyMaterialsScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildModalTextField(String label, String hint, TextEditingController controller) {
+  Widget _buildModalTextField(String label, String hint, TextEditingController controller, ThemeData theme) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -220,10 +225,12 @@ class StudyMaterialsScreen extends StatelessWidget {
         const SizedBox(height: 5),
         TextField(
           controller: controller,
+          style: TextStyle(color: theme.textTheme.bodyLarge?.color),
           decoration: InputDecoration(
             hintText: hint,
+            hintStyle: TextStyle(color: theme.hintColor),
             filled: true,
-            fillColor: Colors.grey[50],
+            fillColor: theme.brightness == Brightness.dark ? Colors.grey[900] : Colors.grey[50],
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide.none),
           ),
         ),
@@ -231,14 +238,14 @@ class StudyMaterialsScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildEmptyState() {
+  Widget _buildEmptyState(ThemeData theme, AppLocalizations l10n) {
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.description_outlined, size: 80, color: Colors.grey[300]),
+          Icon(Icons.description_outlined, size: 80, color: theme.dividerColor),
           const SizedBox(height: 15),
-          const Text("No materials shared yet.", style: TextStyle(color: Colors.grey, fontSize: 16)),
+          Text(l10n.noMaterialsShared, style: TextStyle(color: theme.hintColor, fontSize: 16)),
         ],
       ),
     );

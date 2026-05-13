@@ -61,7 +61,7 @@ class ApiHelper {
     String method,
     String endpoint, {
     Map<String, String>? fields,
-    Map<String, String>? files, // fieldName: filePath
+    Map<String, dynamic>? files, // fieldName: filePath or List<filePath>
     Map<String, String>? headers,
   }) async {
     final url = Uri.parse('$_currentBaseUrl$endpoint');
@@ -79,7 +79,13 @@ class ApiHelper {
       
       if (files != null) {
         for (var entry in files.entries) {
-          request.files.add(await http.MultipartFile.fromPath(entry.key, entry.value));
+          if (entry.value is List) {
+            for (var filePath in entry.value) {
+              request.files.add(await http.MultipartFile.fromPath(entry.key, filePath));
+            }
+          } else if (entry.value is String) {
+            request.files.add(await http.MultipartFile.fromPath(entry.key, entry.value));
+          }
         }
       }
 

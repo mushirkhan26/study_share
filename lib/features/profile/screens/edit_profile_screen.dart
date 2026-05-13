@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
+import '../../../l10n/app_localizations.dart';
 import '../../../config/theme/app_colors.dart';
 import '../../../core/providers/auth_provider.dart';
 import '../../../core/utils/ui_utils.dart';
@@ -15,6 +16,7 @@ class EditProfileScreen extends StatelessWidget {
   
   final _nameController = TextEditingController();
   final _collegeController = TextEditingController();
+  final _phoneController = TextEditingController();
   
   final ValueNotifier<File?> _imageFile = ValueNotifier<File?>(null);
 
@@ -25,24 +27,25 @@ class EditProfileScreen extends StatelessWidget {
     }
   }
 
-  void _saveProfile(BuildContext context) async {
+  void _saveProfile(BuildContext context, AppLocalizations l10n) async {
     if (_formKey.currentState!.validate()) {
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
 
       final success = await authProvider.updateProfile(
         username: _nameController.text.trim(),
         college: _collegeController.text.trim(),
+        phoneNumber: _phoneController.text.trim(),
         profileImage: _imageFile.value,
       );
 
       if (success) {
         if (context.mounted) {
-          UIUtils.showSnackBar(context, "Profile Updated Successfully!");
+          UIUtils.showSnackBar(context, l10n.profileUpdated);
           context.pop();
         }
       } else {
         if (context.mounted) {
-          UIUtils.showSnackBar(context, "Update failed", isError: true);
+          UIUtils.showSnackBar(context, l10n.updateFailed, isError: true);
         }
       }
     }
@@ -50,24 +53,25 @@ class EditProfileScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context)!;
     final authProvider = Provider.of<AuthProvider>(context);
     final user = authProvider.user;
 
-    // Initialize controllers with current user data
-    _nameController.text = user?.username ?? '';
-    _collegeController.text = user?.college ?? '';
+    if (_nameController.text.isEmpty && user != null) {
+      _nameController.text = user.username ?? '';
+      _collegeController.text = user.college ?? '';
+      _phoneController.text = user.phoneNumber ?? '';
+    }
 
     if (authProvider.isLoading && user == null) {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        title: const Text("Edit Profile", style: TextStyle(fontWeight: FontWeight.bold)),
-        backgroundColor: Colors.white,
-        elevation: 0,
-        iconTheme: const IconThemeData(color: Colors.black),
+        title: Text(l10n.editProfile, style: const TextStyle(fontWeight: FontWeight.bold)),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24.0),
@@ -110,9 +114,11 @@ class EditProfileScreen extends StatelessWidget {
               ),
               const SizedBox(height: 30),
 
-              _buildEditField("Full Name", _nameController, Icons.person_outline),
+              _buildEditField(context, l10n.fullName, _nameController, Icons.person_outline, l10n: l10n),
               const SizedBox(height: 20),
-              _buildEditField("College/University", _collegeController, Icons.school_outlined),
+              _buildEditField(context, l10n.college, _collegeController, Icons.school_outlined, l10n: l10n),
+              const SizedBox(height: 20),
+              _buildEditField(context, l10n.showPhoneNumber, _phoneController, Icons.phone_outlined, keyboardType: TextInputType.phone, l10n: l10n),
 
               const SizedBox(height: 40),
 
@@ -120,7 +126,7 @@ class EditProfileScreen extends StatelessWidget {
                 width: double.infinity,
                 height: 55,
                 child: ElevatedButton(
-                  onPressed: authProvider.isLoading ? null : () => _saveProfile(context),
+                  onPressed: authProvider.isLoading ? null : () => _saveProfile(context, l10n),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primary,
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -128,9 +134,9 @@ class EditProfileScreen extends StatelessWidget {
                   ),
                   child: authProvider.isLoading 
                     ? const CircularProgressIndicator(color: Colors.white)
-                    : const Text(
-                        "Save Changes",
-                        style: TextStyle(fontSize: 18, color: Colors.white, fontWeight: FontWeight.bold),
+                    : Text(
+                        l10n.saveChanges,
+                        style: const TextStyle(fontSize: 18, color: Colors.white, fontWeight: FontWeight.bold),
                       ),
                 ),
               ),
@@ -141,22 +147,25 @@ class EditProfileScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildEditField(String label, TextEditingController controller, IconData icon) {
+  Widget _buildEditField(BuildContext context, String label, TextEditingController controller, IconData icon, {TextInputType? keyboardType, required AppLocalizations l10n}) {
+    final theme = Theme.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14, color: Colors.black87)),
+        Text(label, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
         const SizedBox(height: 8),
         TextFormField(
           controller: controller,
+          keyboardType: keyboardType,
+          style: TextStyle(color: theme.textTheme.bodyLarge?.color),
           decoration: InputDecoration(
             prefixIcon: Icon(icon, color: AppColors.primary, size: 22),
             filled: true,
-            fillColor: Colors.grey[100],
+            fillColor: theme.brightness == Brightness.dark ? Colors.grey[900] : Colors.grey[100],
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
             contentPadding: const EdgeInsets.symmetric(vertical: 16),
           ),
-          validator: (value) => value!.isEmpty ? "This field is required" : null,
+          validator: (value) => value!.isEmpty ? l10n.fieldRequired : null,
         ),
       ],
     );

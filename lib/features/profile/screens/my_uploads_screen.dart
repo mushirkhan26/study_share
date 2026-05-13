@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../../../l10n/app_localizations.dart';
 import '../../../core/providers/book_provider.dart';
 import '../../../core/utils/ui_utils.dart';
 
@@ -8,6 +9,8 @@ class MyUploadsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context)!;
     final bookProvider = Provider.of<BookProvider>(context);
 
     // Initial fetch
@@ -18,17 +21,17 @@ class MyUploadsScreen extends StatelessWidget {
     });
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        title: const Text("My Ads", style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
-        backgroundColor: Colors.white,
+        title: Text(l10n.myUploads, style: TextStyle(color: theme.brightness == Brightness.dark ? Colors.white : Colors.black, fontWeight: FontWeight.bold)),
+        backgroundColor: theme.scaffoldBackgroundColor,
         elevation: 0,
-        iconTheme: const IconThemeData(color: Colors.black),
+        iconTheme: IconThemeData(color: theme.brightness == Brightness.dark ? Colors.white : Colors.black),
       ),
       body: bookProvider.isLoading && bookProvider.myBooks.isEmpty
           ? const Center(child: CircularProgressIndicator())
           : bookProvider.myBooks.isEmpty
-              ? _buildEmptyState()
+              ? _buildEmptyState(l10n, theme)
               : RefreshIndicator(
                   onRefresh: () => bookProvider.fetchMyBooks(),
                   child: ListView.builder(
@@ -46,7 +49,7 @@ class MyUploadsScreen extends StatelessWidget {
                         margin: const EdgeInsets.only(bottom: 15),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
                         elevation: 0,
-                        color: Colors.grey[50],
+                        color: theme.brightness == Brightness.dark ? Colors.grey[900] : Colors.grey[50],
                         child: Padding(
                           padding: const EdgeInsets.all(12),
                           child: Row(
@@ -57,10 +60,10 @@ class MyUploadsScreen extends StatelessWidget {
                                 child: Container(
                                   width: 80,
                                   height: 110,
-                                  color: Colors.grey[200],
+                                  color: theme.brightness == Brightness.dark ? Colors.black : Colors.grey[200],
                                   child: imageUrl != null 
                                     ? Image.network(imageUrl, fit: BoxFit.cover)
-                                    : const Icon(Icons.book, color: Colors.grey),
+                                    : Icon(Icons.book, color: theme.hintColor),
                                 ),
                               ),
                               const SizedBox(width: 15),
@@ -95,15 +98,15 @@ class MyUploadsScreen extends StatelessWidget {
                                       children: [
                                         _buildActionButton(
                                           isSold ? Icons.undo : Icons.check_circle_outline,
-                                          isSold ? "Available" : "Mark Sold",
+                                          isSold ? l10n.available : l10n.markSold,
                                           isSold ? Colors.orange : Colors.green,
-                                          () => _toggleSoldStatus(context, bookId, isSold),
+                                          () => _toggleSoldStatus(context, bookId, isSold, l10n),
                                         ),
                                         _buildActionButton(
                                           Icons.delete_outline,
-                                          "Delete",
+                                          l10n.delete,
                                           Colors.red,
-                                          () => _deleteAd(context, bookId),
+                                          () => _deleteAd(context, bookId, l10n),
                                         ),
                                       ],
                                     ),
@@ -120,24 +123,24 @@ class MyUploadsScreen extends StatelessWidget {
     );
   }
 
-  void _toggleSoldStatus(BuildContext context, String id, bool currentStatus) async {
+  void _toggleSoldStatus(BuildContext context, String id, bool currentStatus, AppLocalizations l10n) async {
     final bookProvider = Provider.of<BookProvider>(context, listen: false);
     final success = await bookProvider.updateBookStatus(id, !currentStatus);
     if (success && context.mounted) {
-       UIUtils.showSnackBar(context, "Status updated!");
+       UIUtils.showSnackBar(context, l10n.statusUpdated);
     }
   }
 
-  void _deleteAd(BuildContext context, String id) async {
+  void _deleteAd(BuildContext context, String id, AppLocalizations l10n) async {
     final bookProvider = Provider.of<BookProvider>(context, listen: false);
     bool confirm = await showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text("Delete Ad?"),
-        content: const Text("Are you sure you want to remove this book listing?"),
+        title: Text(l10n.deleteAdConfirmTitle),
+        content: Text(l10n.deleteAdConfirmContent),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text("Cancel")),
-          TextButton(onPressed: () => Navigator.pop(context, true), child: const Text("Delete", style: TextStyle(color: Colors.red))),
+          TextButton(onPressed: () => Navigator.pop(context, false), child: Text(l10n.cancel)),
+          TextButton(onPressed: () => Navigator.pop(context, true), child: Text(l10n.delete, style: const TextStyle(color: Colors.red))),
         ],
       ),
     ) ?? false;
@@ -145,7 +148,7 @@ class MyUploadsScreen extends StatelessWidget {
     if (confirm) {
       final success = await bookProvider.deleteBook(id);
       if (success && context.mounted) {
-        UIUtils.showSnackBar(context, "Ad deleted successfully");
+        UIUtils.showSnackBar(context, l10n.adDeletedSuccess);
       }
     }
   }
@@ -173,14 +176,14 @@ class MyUploadsScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildEmptyState() {
+  Widget _buildEmptyState(AppLocalizations l10n, ThemeData theme) {
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.library_books_outlined, size: 80, color: Colors.grey[300]),
+          Icon(Icons.library_books_outlined, size: 80, color: theme.dividerColor),
           const SizedBox(height: 15),
-          const Text("You haven't posted any ads yet.", style: TextStyle(color: Colors.grey, fontSize: 16)),
+          Text(l10n.noAdsPosted, style: TextStyle(color: theme.hintColor, fontSize: 16)),
         ],
       ),
     );

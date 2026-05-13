@@ -1,5 +1,4 @@
 import 'dart:io';
-import '../../models/user_model.dart'; // To use AppConstants
 import '../base_api/api_helper.dart';
 import '../base_api/api_response.dart';
 
@@ -14,7 +13,7 @@ class BookService {
     required String condition,
     required String tag,
     String? description,
-    required File imageFile,
+    required List<File> imageFiles,
   }) async {
     final Map<String, String> fields = {
       'title': title,
@@ -26,8 +25,8 @@ class BookService {
     };
     if (description != null) fields['description'] = description;
 
-    final Map<String, String> files = {
-      'image': imageFile.path,
+    final Map<String, dynamic> files = {
+      'images': imageFiles.map((f) => f.path).toList(),
     };
 
     final response = await _apiHelper.multipartRequest<Map<String, dynamic>>(

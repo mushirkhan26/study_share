@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
+import '../../../l10n/app_localizations.dart';
 import '../../../config/navigation/app_routes.dart';
 import '../../../core/providers/wishlist_provider.dart';
 import '../../../widgets/book_card.dart';
@@ -10,6 +11,8 @@ class SavedMaterialsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context)!;
     final wishlistProvider = Provider.of<WishlistProvider>(context);
 
     // Initial fetch
@@ -20,17 +23,17 @@ class SavedMaterialsScreen extends StatelessWidget {
     });
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        title: const Text("Saved Books", style: TextStyle(fontWeight: FontWeight.bold)),
-        backgroundColor: Colors.white,
+        title: Text(l10n.savedBooks, style: const TextStyle(fontWeight: FontWeight.bold)),
+        backgroundColor: theme.scaffoldBackgroundColor,
         elevation: 0,
-        iconTheme: const IconThemeData(color: Colors.black),
+        iconTheme: IconThemeData(color: theme.brightness == Brightness.dark ? Colors.white : Colors.black),
       ),
       body: wishlistProvider.isLoading && wishlistProvider.savedBooks.isEmpty
           ? const Center(child: CircularProgressIndicator())
           : wishlistProvider.savedBooks.isEmpty
-              ? _buildEmptyState(context)
+              ? _buildEmptyState(context, l10n, theme)
               : RefreshIndicator(
                   onRefresh: () => wishlistProvider.fetchWishlist(),
                   child: GridView.builder(
@@ -65,19 +68,19 @@ class SavedMaterialsScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildEmptyState(BuildContext context) {
+  Widget _buildEmptyState(BuildContext context, AppLocalizations l10n, ThemeData theme) {
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.favorite_border, size: 80, color: Colors.grey[300]),
+          Icon(Icons.favorite_border, size: 80, color: theme.dividerColor),
           const SizedBox(height: 15),
-          const Text("No saved books yet.", style: TextStyle(color: Colors.grey, fontSize: 16)),
+          Text(l10n.noSavedBooks, style: TextStyle(color: theme.hintColor, fontSize: 16)),
           const SizedBox(height: 20),
           ElevatedButton(
             onPressed: () => context.go(AppRoutes.homeRoute),
             style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF00BFA5)),
-            child: const Text("Explore Books", style: TextStyle(color: Colors.white)),
+            child: Text(l10n.exploreBooks, style: const TextStyle(color: Colors.white)),
           ),
         ],
       ),

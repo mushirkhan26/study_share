@@ -16,17 +16,18 @@ class NoteCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return GestureDetector(
       onTap: onTap,
       child: Container(
         margin: const EdgeInsets.only(bottom: 15),
         padding: const EdgeInsets.all(15),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: theme.cardColor,
           borderRadius: BorderRadius.circular(15),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.05),
+              color: Colors.black.withOpacity(theme.brightness == Brightness.dark ? 0.2 : 0.05),
               blurRadius: 10,
               offset: const Offset(0, 5),
             ),
@@ -52,11 +53,11 @@ class NoteCard extends StatelessWidget {
                 children: [
                   Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                   const SizedBox(height: 4),
-                  Text("$subject • By $author", style: const TextStyle(color: Colors.grey, fontSize: 13)),
+                  Text("$subject • By $author", style: TextStyle(color: theme.hintColor, fontSize: 13)),
                 ],
               ),
             ),
-            const Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey),
+            Icon(Icons.arrow_forward_ios, size: 16, color: theme.hintColor),
           ],
         ),
       ),

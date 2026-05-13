@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../l10n/app_localizations.dart';
 import '../../../config/theme/app_colors.dart';
 import '../../../core/constants/app_constants.dart';
 
@@ -7,13 +8,16 @@ class AboutAppScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context)!;
+
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        title: const Text("About App", style: TextStyle(fontWeight: FontWeight.bold)),
-        backgroundColor: Colors.white,
+        title: Text(l10n.aboutApp, style: const TextStyle(fontWeight: FontWeight.bold)),
+        backgroundColor: theme.scaffoldBackgroundColor,
         elevation: 0,
-        iconTheme: const IconThemeData(color: Colors.black),
+        iconTheme: IconThemeData(color: theme.brightness == Brightness.dark ? Colors.white : Colors.black),
       ),
       body: SingleChildScrollView(
         child: Column(
@@ -34,14 +38,14 @@ class AboutAppScreen extends StatelessWidget {
                     child: const Icon(Icons.school_rounded, size: 60, color: AppColors.primary),
                   ),
                   const SizedBox(height: 20),
-                  const Text(
-                    AppConstants.appName,
-                    style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                  Text(
+                    l10n.appName,
+                    style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 5),
                   Text(
                     "Version ${AppConstants.appVersion}",
-                    style: TextStyle(color: Colors.grey.shade600, fontSize: 14),
+                    style: TextStyle(color: theme.hintColor, fontSize: 14),
                   ),
                 ],
               ),
@@ -55,14 +59,14 @@ class AboutAppScreen extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
-                    "Our Mission",
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.primary),
+                  Text(
+                    l10n.ourMission,
+                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.primary),
                   ),
                   const SizedBox(height: 12),
                   Text(
-                    "Study Share is designed to help students save money and reduce waste by creating a marketplace for second-hand study materials. We believe every student should have easy access to affordable education resources.",
-                    style: TextStyle(fontSize: 15, color: Colors.grey.shade800, height: 1.6),
+                    l10n.missionDescription,
+                    style: TextStyle(fontSize: 15, color: theme.textTheme.bodyMedium?.color, height: 1.6),
                   ),
                 ],
               ),
@@ -76,16 +80,16 @@ class AboutAppScreen extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
-                    "Our Team",
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.primary),
+                  Text(
+                    l10n.ourTeam,
+                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.primary),
                   ),
                   const SizedBox(height: 12),
                   
-                  _buildTeamMember("Mushir Khan", "Flutter Developer", Icons.code_rounded),
-                  _buildTeamMember("Rehan Qadri", "Backend Developer", Icons.storage_rounded),
-                  _buildTeamMember("Mohammed Rehan", "UI Designer", Icons.palette_rounded),
-                  _buildTeamMember("Mohammed Sajid", "Application Tester", Icons.bug_report_rounded),
+                  _buildTeamMember("Mushir Khan", "Flutter Developer", Icons.code_rounded, theme),
+                  _buildTeamMember("Rehan Qadri", "Backend Developer", Icons.storage_rounded, theme),
+                  _buildTeamMember("Mohammed Rehan", "UI Designer", Icons.palette_rounded, theme),
+                  _buildTeamMember("Mohammed Sajid", "Application Tester", Icons.bug_report_rounded, theme),
                 ],
               ),
             ),
@@ -93,9 +97,9 @@ class AboutAppScreen extends StatelessWidget {
             const SizedBox(height: 40),
 
             // --- Bottom Links/Info ---
-            const Text(
-              "Made with ❤️ for Students",
-              style: TextStyle(color: Colors.grey, fontSize: 12),
+            Text(
+              l10n.madeWithLove,
+              style: TextStyle(color: theme.hintColor, fontSize: 12),
             ),
             const SizedBox(height: 20),
           ],
@@ -104,14 +108,14 @@ class AboutAppScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildTeamMember(String name, String role, IconData icon) {
+  Widget _buildTeamMember(String name, String role, IconData icon, ThemeData theme) {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.grey[50],
+        color: theme.brightness == Brightness.dark ? Colors.grey[900] : Colors.grey[50],
         borderRadius: BorderRadius.circular(15),
-        border: Border.all(color: Colors.grey.shade200),
+        border: Border.all(color: theme.dividerColor),
       ),
       child: Row(
         children: [
@@ -129,7 +133,7 @@ class AboutAppScreen extends StatelessWidget {
               ),
               Text(
                 role,
-                style: const TextStyle(color: Colors.grey, fontSize: 12),
+                style: TextStyle(color: theme.hintColor, fontSize: 12),
               ),
             ],
           ),

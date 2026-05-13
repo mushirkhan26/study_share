@@ -33,6 +33,10 @@ class AuthProvider extends ChangeNotifier {
           role: UserRoleExtension.fromString(data['role'] ?? 'buyer'),
           profileImage: data['profileImage'],
           college: data['college'],
+          phoneNumber: data['phoneNumber'],
+          isTwoFactorEnabled: data['isTwoFactorEnabled'] == true || data['isTwoFactorEnabled'] == 'true',
+          isPrivateProfile: data['isPrivateProfile'] == true || data['isPrivateProfile'] == 'true',
+          showPhoneNumber: data['showPhoneNumber'] == true || data['showPhoneNumber'] == 'true',
         );
       }
     } catch (e) {
@@ -43,11 +47,31 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
-  Future<bool> login(String email, String password) async {
+  Future<String?> login(String email, String password) async {
     _isLoading = true;
     notifyListeners();
 
     final response = await _authService.login(email: email, password: password);
+    
+    _isLoading = false;
+    if (response.success && response.data != null) {
+      if (response.message == '2FA_REQUIRED') {
+        notifyListeners();
+        return '2FA_REQUIRED';
+      }
+      _user = response.data;
+      notifyListeners();
+      return 'SUCCESS';
+    }
+    notifyListeners();
+    return response.message ?? 'Login failed';
+  }
+
+  Future<bool> verify2FA(String email, String otp) async {
+    _isLoading = true;
+    notifyListeners();
+
+    final response = await _authService.verify2FA(email: email, otp: otp);
     
     _isLoading = false;
     if (response.success && response.data != null) {
@@ -110,6 +134,7 @@ class AuthProvider extends ChangeNotifier {
   Future<bool> updateProfile({
     String? username,
     String? college,
+    String? phoneNumber,
     String? role,
     File? profileImage,
   }) async {
@@ -119,6 +144,7 @@ class AuthProvider extends ChangeNotifier {
     final response = await _authService.updateProfile(
       username: username,
       college: college,
+      phoneNumber: phoneNumber,
       role: role,
       profileImage: profileImage,
     );
@@ -131,5 +157,86 @@ class AuthProvider extends ChangeNotifier {
     }
     notifyListeners();
     return false;
+  }
+
+  Future<bool> changePassword(String oldPassword, String newPassword) async {
+    _isLoading = true;
+    notifyListeners();
+
+    final response = await _authService.changePassword(
+      oldPassword: oldPassword,
+      newPassword: newPassword,
+    );
+
+    _isLoading = false;
+    notifyListeners();
+    return response.success;
+  }
+
+  Future<bool> updateSettings({
+    bool? isTwoFactorEnabled,
+    bool? isPrivateProfile,
+    bool? showPhoneNumber,
+  }) async {
+    final response = await _authService.updateSettings(
+      isTwoFactorEnabled: isTwoFactorEnabled,
+      isPrivateProfile: isPrivateProfile,
+      showPhoneNumber: showPhoneNumber,
+    );
+
+    if (response.success && response.data != null) {
+      _user = _user?.copyWith(
+        isTwoFactorEnabled: response.data!['isTwoFactorEnabled'],
+        isPrivateProfile: response.data!['isPrivateProfile'],
+        showPhoneNumber: response.data!['showPhoneNumber'],
+      );
+      notifyListeners();
+      return true;
+    }
+    return false;
+  }
+
+  Future<List<dynamic>> getActiveSessions() async {
+    final response = await _authService.getActiveSessions();
+    if (response.success && response.data != null) {
+      return response.data!;
+    }
+    return [];
+  }
+
+  Future<bool> revokeSession(String sessionId) async {
+    final response = await _authService.revokeSession(sessionId);
+    return response.success;
+  }
+
+  Future<bool> deleteAccount() async {
+    final response = await _authService.deleteAccount();
+    if (response.success) {
+      await logout();
+      return true;
+    }
+    return false;
+  }
+
+  Future<String?> forgotPassword(String email) async {
+    _isLoading = true;
+    notifyListeners();
+    final response = await _authService.forgotPassword(email);
+    _isLoading = false;
+    notifyListeners();
+    return response.success ? null : response.message;
+  }
+
+  Future<String?> resetPassword(String email, String otp, String newPassword) async {
+    _isLoading = true;
+    notifyListeners();
+    final response = await _authService.resetPassword(
+      email: email,
+      otp: otp,
+      newPassword: newPassword,
+    );
+    _isLoading = false;
+    notifyListeners();
+    return response.success ? null : response.message;
   }
 }

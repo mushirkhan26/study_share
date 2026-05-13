@@ -2,6 +2,7 @@ import 'package:curved_labeled_gradient_navigation_bar/curved_navigation_bar.dar
 import 'package:curved_labeled_gradient_navigation_bar/curved_navigation_bar_item.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import '../../l10n/app_localizations.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'dart:ui';
@@ -32,12 +33,14 @@ class NavigationHost extends StatelessWidget {
 
   // ================== MORE MENU (Frosted Glass) ==================
   Future<void> _openMoreMenuDialog(BuildContext context, AuthProvider authProvider) async {
+    final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context)!;
     final user = authProvider.user;
     await showGeneralDialog(
       context: context,
       barrierDismissible: true,
       barrierLabel: "MoreMenu",
-      barrierColor: Colors.black12,
+      barrierColor: Colors.black26,
       transitionDuration: const Duration(milliseconds: 300),
       pageBuilder: (context, animation, secondaryAnimation) {
         return Material(
@@ -53,7 +56,7 @@ class NavigationHost extends StatelessWidget {
                 right: 20,
                 child: Column(
                   children: [
-                    CustomPaint(size: const Size(20, 10), painter: _NotchPainter()),
+                    CustomPaint(size: const Size(20, 10), painter: _NotchPainter(color: AppColors.primary)),
                     ClipRRect(
                       borderRadius: BorderRadius.circular(20),
                       child: BackdropFilter(
@@ -62,9 +65,14 @@ class NavigationHost extends StatelessWidget {
                           width: 250,
                           padding: const EdgeInsets.symmetric(vertical: 10),
                           decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.7),
+                            color: theme.brightness == Brightness.dark 
+                                ? Colors.black.withValues(alpha: 0.8) 
+                                : Colors.white.withValues(alpha: 0.7),
                             borderRadius: BorderRadius.circular(20),
-                            border: Border.all(color: Colors.white, width: 2),
+                            border: Border.all(
+                              color: theme.brightness == Brightness.dark ? Colors.grey[800]! : Colors.white, 
+                              width: 2
+                            ),
                           ),
                           child: Column(
                             mainAxisSize: MainAxisSize.min,
@@ -79,54 +87,60 @@ class NavigationHost extends StatelessWidget {
                                       child: Icon(Icons.person, color: Colors.white)
                                     ),
                                     const SizedBox(height: 5),
-                                    Text(user?.username ?? "User", style: const TextStyle(fontWeight: FontWeight.bold)),
                                     Text(
-                                      (user?.isSeller ?? false) ? "Seller Profile" : "Buyer Profile",
+                                      user?.username ?? "User", 
+                                      style: TextStyle(fontWeight: FontWeight.bold, color: theme.textTheme.bodyLarge?.color)
+                                    ),
+                                    Text(
+                                      (user?.isSeller ?? false) ? l10n.sellerProfile : l10n.buyerProfile,
                                       style: TextStyle(
                                         fontSize: 12, 
-                                        color: (user?.isSeller ?? false) ? AppColors.primary : Colors.grey,
+                                        color: (user?.isSeller ?? false) ? AppColors.primary : theme.hintColor,
                                         fontWeight: (user?.isSeller ?? false) ? FontWeight.bold : FontWeight.normal,
                                       )
                                     ),
                                   ],
                                 ),
                               ),
-                              const Divider(indent: 20, endIndent: 20),
+                              Divider(indent: 20, endIndent: 20, color: theme.dividerColor),
                               if (user?.isSeller ?? false)
                                 _buildMoreItem(
                                   context: context,
                                   icon: Icons.book_outlined,
-                                  text: "My Uploads",
+                                  text: l10n.myUploads,
                                   onTap: () {
                                     Navigator.of(context, rootNavigator: true).pop();
                                     context.push(AppRoutes.myUploads);
                                   },
+                                  theme: theme,
                                 ),
                               _buildMoreItem(
                                 context: context,
                                 icon: Icons.bookmark_border,
-                                text: "Saved Materials",
+                                text: l10n.savedMaterials,
                                 onTap: () {
                                   Navigator.of(context, rootNavigator: true).pop();
                                   context.push(AppRoutes.savedMaterials);
                                 },
+                                theme: theme,
                               ),
                               _buildMoreItem(
                                 context: context,
                                 icon: Icons.settings_outlined,
-                                text: "Settings",
+                                text: l10n.settings,
                                 onTap: () {
                                   Navigator.of(context, rootNavigator: true).pop();
                                   context.push(AppRoutes.settings);
                                 },
+                                theme: theme,
                               ),
-                              const Divider(indent: 20, endIndent: 20),
+                              Divider(indent: 20, endIndent: 20, color: theme.dividerColor),
                               ListTile(
                                 leading: CircleAvatar(
                                   backgroundColor: Colors.red.withValues(alpha: 0.1),
                                   child: const Icon(Icons.logout_rounded, color: Colors.red, size: 20),
                                 ),
-                                title: const Text("Logout", style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14, color: Colors.red)),
+                                title: Text(l10n.logout, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14, color: Colors.red)),
                                 onTap: () {
                                   Navigator.of(context, rootNavigator: true).pop();
                                   _showLogoutDialog(context, authProvider);
@@ -147,20 +161,22 @@ class NavigationHost extends StatelessWidget {
     );
   }
 
-  Widget _buildMoreItem({required BuildContext context, required IconData icon, required String text, required VoidCallback onTap}) {
+  Widget _buildMoreItem({required BuildContext context, required IconData icon, required String text, required VoidCallback onTap, required ThemeData theme}) {
     return ListTile(
       leading: CircleAvatar(
         backgroundColor: AppColors.primary.withValues(alpha: 0.1),
         child: Icon(icon, color: AppColors.primary, size: 20),
       ),
-      title: Text(text, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
-      trailing: const Icon(Icons.chevron_right, size: 18),
+      title: Text(text, style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14, color: theme.textTheme.bodyLarge?.color)),
+      trailing: Icon(Icons.chevron_right, size: 18, color: theme.hintColor),
       onTap: onTap,
     );
   }
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context)!;
     final authProvider = Provider.of<AuthProvider>(context);
     final user = authProvider.user;
 
@@ -174,10 +190,6 @@ class NavigationHost extends StatelessWidget {
           if (location != AppRoutes.homeRoute) {
             context.go(AppRoutes.homeRoute);
           } else {
-             // SystemNavigator.pop() is fine, but double-tap to exit logic 
-             // might need a StatefulWidget if we want to store _lastBackPressed
-             // Or we can use a local variable in build if it's fine, but build is called often.
-             // For now, let's keep it simple.
              SystemNavigator.pop();
           }
         }
@@ -189,30 +201,35 @@ class NavigationHost extends StatelessWidget {
           index: index,
           height: 65,
           backgroundColor: Colors.transparent,
-          color: const Color(0xFFE1F8F8),
+          color: theme.brightness == Brightness.dark ? const Color(0xFF1F1F1F) : const Color(0xFFE1F8F8),
           buttonBackgroundColor: AppColors.primary,
           animationDuration: const Duration(milliseconds: 400),
           items: [
             CurvedNavigationBarItem(
               child: Icon(Icons.home_filled, color: index == 0 ? Colors.white : AppColors.primary),
-              label: 'Home',
+              label: l10n.home,
+              labelStyle: TextStyle(color: theme.brightness == Brightness.dark ? Colors.white70 : AppColors.primary, fontSize: 11),
             ),
             CurvedNavigationBarItem(
               child: Icon(Icons.search, color: index == 1 ? Colors.white : AppColors.primary),
-              label: 'Search',
+              label: l10n.search,
+              labelStyle: TextStyle(color: theme.brightness == Brightness.dark ? Colors.white70 : AppColors.primary, fontSize: 11),
             ),
             if (user?.isSeller ?? false)
               CurvedNavigationBarItem(
                 child: Icon(Icons.add_circle_outline, color: index == 2 ? Colors.white : AppColors.primary),
-                label: 'Sell',
+                label: l10n.sell,
+                labelStyle: TextStyle(color: theme.brightness == Brightness.dark ? Colors.white70 : AppColors.primary, fontSize: 11),
               ),
             CurvedNavigationBarItem(
               child: Icon(Icons.person_outline, color: ((user?.isSeller ?? false) ? index == 3 : index == 2) ? Colors.white : AppColors.primary),
-              label: 'Profile',
+              label: l10n.profile,
+              labelStyle: TextStyle(color: theme.brightness == Brightness.dark ? Colors.white70 : AppColors.primary, fontSize: 11),
             ),
             CurvedNavigationBarItem(
               child: Icon(Icons.menu, color: ((user?.isSeller ?? false) ? index == 4 : index == 3) ? Colors.white : AppColors.primary),
-              label: 'More',
+              label: l10n.more,
+              labelStyle: TextStyle(color: theme.brightness == Brightness.dark ? Colors.white70 : AppColors.primary, fontSize: 11),
             ),
           ],
           onTap: (clickedIndex) async {
@@ -252,9 +269,12 @@ class NavigationHost extends StatelessWidget {
 }
 
 class _NotchPainter extends CustomPainter {
+  final Color color;
+  _NotchPainter({required this.color});
+
   @override
   void paint(Canvas canvas, Size size) {
-    final paint = Paint()..color = AppColors.primary;
+    final paint = Paint()..color = color;
     final path = Path()
       ..moveTo(0, size.height)
       ..lineTo(size.width / 2, 0)
@@ -266,13 +286,14 @@ class _NotchPainter extends CustomPainter {
 }
 
 void _showLogoutDialog(BuildContext context, AuthProvider authProvider) {
+  final l10n = AppLocalizations.of(context)!;
   showDialog(
     context: context,
     builder: (context) => AlertDialog(
-      title: const Text("Logout"),
-      content: const Text("Are you sure you want to logout?"),
+      title: Text(l10n.logout),
+      content: Text(l10n.logoutConfirm),
       actions: [
-        TextButton(onPressed: () => Navigator.of(context, rootNavigator: true).pop(), child: const Text("Cancel")),
+        TextButton(onPressed: () => Navigator.of(context, rootNavigator: true).pop(), child: Text(l10n.cancel)),
         ElevatedButton(
           onPressed: () {
             Navigator.of(context, rootNavigator: true).pop();
@@ -280,7 +301,7 @@ void _showLogoutDialog(BuildContext context, AuthProvider authProvider) {
             context.go(AppRoutes.loginRoute);
           },
           style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-          child: const Text("Logout", style: TextStyle(color: Colors.white)),
+          child: Text(l10n.logout, style: const TextStyle(color: Colors.white)),
         ),
       ],
     ),

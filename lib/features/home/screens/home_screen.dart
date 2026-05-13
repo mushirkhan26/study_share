@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../l10n/app_localizations.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import '../../../widgets/book_card.dart';
@@ -12,6 +13,8 @@ class HomeScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context)!;
     final authProvider = Provider.of<AuthProvider>(context);
     final bookProvider = Provider.of<BookProvider>(context);
     final user = authProvider.user;
@@ -24,25 +27,25 @@ class HomeScreen extends StatelessWidget {
     });
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: theme.scaffoldBackgroundColor,
         elevation: 0,
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
               (user?.isSeller ?? false) 
-                  ? "Hello Seller, ${user?.username}" 
-                  : "Discover Books, ${user?.username}", 
-              style: const TextStyle(color: Colors.black, fontWeight: FontWeight.bold, fontSize: 22)
+                  ? l10n.helloSeller(user?.username ?? "") 
+                  : l10n.discoverBooks(user?.username ?? ""), 
+              style: TextStyle(color: theme.brightness == Brightness.dark ? Colors.white : Colors.black, fontWeight: FontWeight.bold, fontSize: 22)
             ),
-            const Text("Find second-hand books from seniors", style: TextStyle(color: Colors.grey, fontSize: 13)),
+            Text(l10n.findSecondHandBooks, style: TextStyle(color: theme.hintColor, fontSize: 13)),
           ],
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.notifications_none, color: Colors.black),
+            icon: Icon(Icons.notifications_none, color: theme.brightness == Brightness.dark ? Colors.white : Colors.black),
             onPressed: () => context.push(AppRoutes.notifications),
           ),
         ],
@@ -62,10 +65,10 @@ class HomeScreen extends StatelessWidget {
                     child: AbsorbPointer(
                       child: TextField(
                         decoration: InputDecoration(
-                          hintText: "Search for books, authors, or subjects...",
+                          hintText: l10n.searchBooksHint,
                           prefixIcon: const Icon(Icons.search, color: Color(0xFF00BFA5)),
                           filled: true,
-                          fillColor: Colors.grey[100],
+                          fillColor: theme.brightness == Brightness.dark ? Colors.grey[900] : Colors.grey[100],
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(15),
                             borderSide: BorderSide.none,
@@ -77,22 +80,22 @@ class HomeScreen extends StatelessWidget {
                   const SizedBox(height: 25),
 
                   // Categories (Horizontal Scroll)
-                  const Text("Categories", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                  Text(l10n.categories, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
 
                   const SizedBox(height: 30),
 
                   // 📚 Study Materials Banner
-                  _buildMaterialsBanner(context),
+                  _buildMaterialsBanner(context, l10n),
                   const SizedBox(height: 30),
 
                   // Recently Added Books Title
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text("Recently Added", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                      Text(l10n.recentlyAdded, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                       TextButton(
                         onPressed: () {},
-                        child: const Text("View All", style: TextStyle(color: Color(0xFF00BFA5))),
+                        child: Text(l10n.viewAll, style: const TextStyle(color: Color(0xFF00BFA5))),
                       ),
                     ],
                   ),
@@ -118,8 +121,8 @@ class HomeScreen extends StatelessWidget {
                 ),
               )
             else if (bookProvider.books.isEmpty)
-              const SliverFillRemaining(
-                child: Center(child: Text("No books found")),
+              SliverFillRemaining(
+                child: Center(child: Text(l10n.noBooksFound)),
               )
             else
               SliverPadding(
@@ -162,7 +165,8 @@ class HomeScreen extends StatelessWidget {
   }
 
 
-  Widget _buildMaterialsBanner(BuildContext context) {
+  Widget _buildMaterialsBanner(BuildContext context, AppLocalizations l10n) {
+    final theme = Theme.of(context);
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(20),
@@ -173,18 +177,18 @@ class HomeScreen extends StatelessWidget {
       ),
       child: Row(
         children: [
-          const Expanded(
+          Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  "Need Study Notes?",
-                  style: TextStyle(color: Color(0xFF009688), fontSize: 18, fontWeight: FontWeight.bold),
+                  l10n.needStudyNotes,
+                  style: const TextStyle(color: Color(0xFF009688), fontSize: 18, fontWeight: FontWeight.bold),
                 ),
-                SizedBox(height: 5),
+                const SizedBox(height: 5),
                 Text(
-                  "Get PDFs and handwritten notes from toppers.",
-                  style: TextStyle(color: Colors.grey, fontSize: 13),
+                  l10n.getPDFsAndNotes,
+                  style: TextStyle(color: theme.hintColor, fontSize: 13),
                 ),
               ],
             ),
@@ -196,7 +200,7 @@ class HomeScreen extends StatelessWidget {
               foregroundColor: Colors.white,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
             ),
-            child: const Text("Browse", style: TextStyle(fontWeight: FontWeight.bold)),
+            child: Text(l10n.browse, style: const TextStyle(fontWeight: FontWeight.bold)),
           ),
         ],
       ),

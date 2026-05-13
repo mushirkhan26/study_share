@@ -1,0 +1,319 @@
+{
+  "@@locale": "en",
+  "appName": "Study Share",
+  "welcomeBack": "Welcome Back!",
+  "loginToAccess": "Login to access your study notes",
+  "emailAddress": "Email Address",
+  "enterEmail": "Enter your email",
+  "password": "Password",
+  "enterPassword": "Enter password",
+  "forgotPassword": "Forgot Password?",
+  "login": "Login",
+  "dontHaveAccount": "Don't have an account?",
+  "signUp": "Sign Up",
+  "loginSuccessful": "Login Successful!",
+  "loginFailed": "Login failed",
+  "discoverBooks": "Discover Books, {name}",
+  "@discoverBooks": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "helloSeller": "Hello Seller, {name}",
+  "@helloSeller": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "findSecondHandBooks": "Find second-hand books from seniors",
+  "searchBooksHint": "Search for books, authors, or subjects...",
+  "categories": "Categories",
+  "recentlyAdded": "Recently Added",
+  "viewAll": "View All",
+  "noBooksFound": "No books found",
+  "needStudyNotes": "Need Study Notes?",
+  "getPDFsAndNotes": "Get PDFs and handwritten notes from toppers.",
+  "browse": "Browse",
+  "home": "Home",
+  "search": "Search",
+  "sell": "Sell",
+  "chat": "Chat",
+  "profile": "Profile",
+  "more": "More",
+  "myUploads": "My Uploads",
+  "savedMaterials": "Saved Materials",
+  "settings": "Settings",
+  "logout": "Logout",
+  "buyerProfile": "Buyer Profile",
+  "sellerProfile": "Seller Profile",
+  "logoutConfirm": "Are you sure you want to logout?",
+  "cancel": "Cancel",
+  "createAccount": "Create Account",
+  "joinCommunity": "Join the Study Share community",
+  "fullName": "Full Name",
+  "enterName": "Enter your name",
+  "college": "College/University",
+  "enterCollege": "Enter college name",
+  "iWantTo": "I want to",
+  "buyBooks": "Buy Books",
+  "sellBooks": "Sell Books",
+  "createPassword": "Create password",
+  "alreadyHaveAccount": "Already have an account?",
+  "accountCreated": "Account Created Successfully!",
+  "signupFailed": "Signup failed",
+  "nameRequired": "Name is required",
+
+  "searchBooks": "Search Books",
+  "searchHint": "Search by title or author...",
+  "courseCategory": "Course / Category",
+  "searching": "Searching...",
+  "resultsFound": "Results ({count} found)",
+  "@resultsFound": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "noBooksMatching": "No books found matching your search.",
+  "all": "All",
+  "bca": "BCA",
+  "btech": "B.Tech",
+  "bsc": "B.Sc",
+  "ba": "BA",
+  "bcom": "B.Com",
+  "novels": "Novels",
+  "other": "Other",
+
+  "postBook": "Post a Book",
+  "sellerProfileRequired": "Seller Profile Required",
+  "buyerProfileNotice": "You are currently using a Buyer profile. Switch to a Seller profile to post ads and sell your books.",
+  "switchToSeller": "Switch to Seller Profile",
+  "switchToSellerConfirm": "Switch to Seller Profile?",
+  "switchToSellerNotice": "By switching to a seller profile, you will be able to post book ads and sell your materials to other students.",
+  "switchText": "Switch",
+  "accountUpgraded": "Account upgraded to Seller!",
+  "failedToUpgrade": "Failed to upgrade",
+  "bookPhoto": "Book Photos (Max 3) *",
+  "tapToAddPhoto": "Tap to add photos",
+  "selectSource": "Select Source",
+  "camera": "Camera",
+  "gallery": "Gallery",
+  "frontPhoto": "Front Photo",
+  "selectFrontPhoto": "Select Front Photo",
+  "addMorePhotos": "Add More Photos",
+  "limitReached": "Limit reached (Max 3 photos)",
+  "bookDetails": "Book Details",
+  "bookTitle": "Book Title",
+  "titleHint": "e.g. Let Us C",
+  "authorName": "Author Name",
+  "authorHint": "e.g. Yashavant Kanetkar",
+  "sellingPrice": "Selling Price (₹)",
+  "priceHint": "e.g. 150",
+  "originalPrice": "Original Price (₹)",
+  "originalPriceHint": "e.g. 400",
+  "condition": "Condition",
+  "courseTag": "Course/Tag",
+  "description": "Description",
+  "descriptionHint": "Tell us more about the book (e.g. Include details about marks, highlights, or why you're selling.)",
+  "postAd": "Post Ad",
+  "pleaseUploadPhoto": "Please upload a picture of the book!",
+  "adPostedSuccess": "Book Ad Posted Successfully!",
+  "failedToPostAd": "Failed to post ad",
+  "required": "Required",
+  "likeNew": "Like New",
+  "good": "Good",
+  "old": "Old",
+  "wornOut": "Worn Out",
+
+  "myAccount": "My Account",
+  "activeAds": "Active Ads",
+  "booksSold": "Books Sold",
+  "earnings": "Earnings",
+  "myAdsManage": "My Ads (Manage Books)",
+  "myAdsSubtitle": "Edit, delete, or mark as sold",
+  "wishlist": "Wishlist",
+  "wishlistSubtitle": "Books you have saved",
+  "myChats": "My Chats",
+  "myChatsSubtitle": "Conversations with buyers/sellers",
+  "settingsSubtitle": "Notifications, privacy, and more",
+
+  "accountSettings": "Account Settings",
+  "editProfile": "Edit Profile",
+  "notifications": "Notifications",
+  "privacySecurity": "Privacy & Security",
+  "preferences": "Preferences",
+  "appearance": "Appearance (Theme Mode)",
+  "appLanguage": "App Language",
+  "supportAbout": "Support & About",
+  "helpCenter": "Help Center / FAQ",
+  "privacyPolicy": "Privacy Policy",
+  "aboutApp": "About App",
+
+  "selectLanguage": "Select Language",
+  "languageChangeNotice": "Changing the language will update the app's user interface text.",
+
+  "unknownAuthor": "Unknown Author",
+  "sellerDetails": "Seller Details",
+  "privateSeller": "Private Seller",
+  "identityHidden": "Identity hidden by seller",
+  "studentSeller": "Student Seller",
+  "privateProfileRestricted": "This seller has a private profile. Contact is restricted.",
+  "chatWithSeller": "Chat with Seller",
+
+  "studyMaterials": "Study Materials",
+  "noMaterialsShared": "No materials shared yet.",
+  "uploadStudyMaterial": "Upload Study Material",
+  "subject": "Subject",
+  "subjectHint": "e.g. Computer Science",
+  "type": "Type",
+  "pdf": "PDF",
+  "image": "Image",
+  "fileSelected": "File Selected: {fileName}",
+  "@fileSelected": {
+    "placeholders": {
+      "fileName": {
+        "type": "String"
+      }
+    }
+  },
+  "tapToSelectFile": "Tap to select file (Image/PDF)",
+  "uploadNow": "Upload Now",
+  "materialUploaded": "Material Uploaded!",
+  "uploadFailed": "Upload failed",
+  "allFieldsRequired": "All fields are required",
+  "noAppToOpenFile": "No app found to open this file",
+
+  "noConversations": "No active conversations found.",
+  "regarding": "Regarding: {title}",
+  "@regarding": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "bookNotAvailable": "This book is no longer available.",
+
+  "lightMode": "Light Mode",
+  "darkMode": "Dark Mode",
+  "systemDefault": "System Default",
+  "darkModeNotice": "Dark mode helps reduce eye strain and saves battery on OLED screens.",
+  "ourMission": "Our Mission",
+  "missionDescription": "Study Share is designed to help students save money and reduce waste by creating a marketplace for second-hand study materials. We believe every student should have easy access to affordable education resources.",
+  "ourTeam": "Our Team",
+  "madeWithLove": "Made with ❤️ for Students",
+  "howCanWeHelp": "How can we help you?",
+  "searchHelpArticles": "Search help articles...",
+  "stillHaveQuestions": "Still have questions?",
+  "contactSupportNotice": "If you can't find an answer in our FAQ, you can reach out to our support team.",
+  "contactSupport": "Contact Support",
+  "security": "Security",
+  "privacy": "Privacy",
+  "accountAction": "Account Action",
+  "changePassword": "Change Password",
+  "changePasswordSubtitle": "Update your account password regularly",
+  "twoFactorAuth": "Two-Factor Authentication",
+  "twoFactorSubtitle": "Add an extra layer of security",
+  "activeSessions": "Active Sessions",
+  "activeSessionsSubtitle": "Manage devices where you are logged in",
+  "privateProfile": "Private Profile",
+  "privateProfileSubtitle": "Only show your ads to registered users",
+  "showPhoneNumber": "Show Phone Number",
+  "showPhoneNumberSubtitle": "Allow buyers to see your number",
+  "deleteAccount": "Delete Account",
+  "deleteAccountSubtitle": "Permanently remove your account and data",
+  "deleteAccountConfirmTitle": "Delete Account?",
+  "deleteAccountConfirmContent": "Are you sure you want to permanently delete your account? This action cannot be undone.",
+  "delete": "Delete",
+  "general": "General",
+  "buying": "Buying",
+  "selling": "Selling",
+
+  "otpSent": "OTP sent to your email!",
+  "verifyOTP": "Verify OTP",
+  "enter6DigitCode": "Enter the 6-digit code sent to {email}",
+  "@enter6DigitCode": {
+    "placeholders": {
+      "email": {
+        "type": "String"
+      }
+    }
+  },
+  "enterEmailToReset": "Enter your email address and we'll send you an OTP to reset your password.",
+  "enterOTP": "Enter OTP",
+  "otpHint": "6-digit OTP",
+  "newPassword": "New Password",
+  "newPasswordHint": "Enter new password",
+  "resetPassword": "Reset Password",
+  "sendOTP": "Send OTP",
+  "changeEmail": "Change Email",
+  "passwordResetSuccess": "Password reset successful! Please login.",
+  "enter6DigitOTP": "Please enter 6-digit OTP",
+  "passwordTooShort": "Password must be at least 6 characters",
+
+  "online": "Online",
+  "initializingChat": "Initializing chat, please wait...",
+  "typeAMessage": "Type a message...",
+
+  "available": "Available",
+  "markSold": "Mark Sold",
+  "delete": "Delete",
+  "statusUpdated": "Status updated!",
+  "deleteAdConfirmTitle": "Delete Ad?",
+  "deleteAdConfirmContent": "Are you sure you want to remove this book listing?",
+  "adDeletedSuccess": "Ad deleted successfully",
+  "noAdsPosted": "You haven't posted any ads yet.",
+
+  "savedBooks": "Saved Books",
+  "noSavedBooks": "No saved books yet.",
+  "exploreBooks": "Explore Books",
+
+  "profileUpdated": "Profile Updated Successfully!",
+  "updateFailed": "Update failed",
+  "saveChanges": "Save Changes",
+  "fieldRequired": "This field is required",
+
+  "markAllAsRead": "Mark all as read",
+  "noNotifications": "No notifications yet",
+
+  "noActiveSessions": "No active sessions found",
+  "current": "Current",
+  "ip": "IP: {ipAddress}",
+  "@ip": {
+    "placeholders": {
+      "ipAddress": {
+        "type": "String"
+      }
+    }
+  },
+  "lastActive": "Last active: {date}",
+  "@lastActive": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "sessionRevoked": "Session revoked",
+
+  "privacyPolicyTitle": "Privacy Policy for Study Share",
+  "lastUpdated": "Last Updated: May 2026",
+  "policyIntroTitle": "1. Introduction",
+  "policyIntroContent": "Welcome to Study Share. We respect your privacy and want to protect your personal data. This Privacy Policy explains how we collect, use, and share your information when you use our mobile application.",
+  "policyDataTitle": "2. Data We Collect",
+  "policyDataContent": "We collect information that you provide directly to us, such as when you create an account, post a book advertisement, or communicate with other users. This may include:\n\n• Name and email address\n• Phone number (optional)\n• College or University name\n• Photos of the books you post",
+  "policyUsageTitle": "3. How We Use Your Data",
+  "policyUsageContent": "We use the information we collect to:\n\n• Provide and maintain our services\n• Facilitate connections between buyers and sellers\n• Send you technical notices and support messages\n• Monitor and analyze usage and trends",
+  "policySharingTitle": "4. Data Sharing",
+  "policySharingContent": "We do not sell your personal data. We only share information with other users as necessary to facilitate transactions (e.g., showing your name on an ad). Your phone number is only shared if you explicitly choose to enable that setting.",
+  "policyRightsTitle": "5. Your Rights",
+  "policyRightsContent": "You have the right to access, update, or delete your personal information at any time through the app's settings. If you choose to delete your account, all your data will be permanently removed from our servers.",
+  "policyContactTitle": "6. Contact Us",
+  "policyContactContent": "If you have any questions about this Privacy Policy, please contact us at support@studyshare.com.",
+  "thankYouTrusting": "Thank you for trusting Study Share."
+}

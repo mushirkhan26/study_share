@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
+import '../../../l10n/app_localizations.dart';
 import '../../../core/providers/auth_provider.dart';
 import '../../../core/providers/chat_provider.dart';
 
@@ -49,7 +50,7 @@ class _ChatScreenState extends State<ChatScreen> {
     }
   }
 
-  void _sendMessage() {
+  void _sendMessage(AppLocalizations l10n) {
     if (_messageController.text.trim().isEmpty) return;
     
     final chatProvider = Provider.of<ChatProvider>(context, listen: false);
@@ -64,24 +65,26 @@ class _ChatScreenState extends State<ChatScreen> {
     } else {
       // Handle case where conversation ID is not yet ready
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Initializing chat, please wait...")),
+        SnackBar(content: Text(l10n.initializingChat)),
       );
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context)!;
     final chatProvider = Provider.of<ChatProvider>(context);
     final authProvider = Provider.of<AuthProvider>(context);
     
-    String otherName = "Chat";
+    String otherName = l10n.chat;
     if (widget.bookData?['conversationId'] != null) {
       otherName = widget.bookData?['otherUser']?['username'] ?? "User";
     } else {
-      otherName = widget.bookData?['seller']?['username'] ?? "Seller";
+      otherName = widget.bookData?['seller']?['username'] ?? l10n.sell; // Using "Sell" as fallback for Seller
     }
 
-    final bookTitle = widget.bookData?['title'] ?? "Book";
+    final bookTitle = widget.bookData?['title'] ?? l10n.bookTitle;
     final bookPrice = widget.bookData?['sellingPrice'] ?? 0;
 
     return PopScope(
@@ -91,24 +94,24 @@ class _ChatScreenState extends State<ChatScreen> {
         }
       },
       child: Scaffold(
-        backgroundColor: Colors.grey[100],
+        backgroundColor: theme.brightness == Brightness.dark ? Colors.black : Colors.grey[100],
         appBar: AppBar(
-          backgroundColor: Colors.white,
+          backgroundColor: theme.appBarTheme.backgroundColor,
           elevation: 1,
-          iconTheme: const IconThemeData(color: Colors.black),
+          iconTheme: theme.appBarTheme.iconTheme,
           title: Row(
             children: [
               CircleAvatar(
                 radius: 18,
                 backgroundColor: const Color(0xFF00BFA5).withValues(alpha: 0.2),
-                child: Text(otherName[0].toUpperCase(), style: const TextStyle(color: Color(0xFF00BFA5), fontWeight: FontWeight.bold)),
+                child: Text(otherName.isNotEmpty ? otherName[0].toUpperCase() : "?", style: const TextStyle(color: Color(0xFF00BFA5), fontWeight: FontWeight.bold)),
               ),
               const SizedBox(width: 10),
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(otherName, style: const TextStyle(color: Colors.black, fontSize: 16, fontWeight: FontWeight.bold)),
-                  const Text("Online", style: TextStyle(color: Colors.green, fontSize: 12)),
+                  Text(otherName, style: TextStyle(color: theme.textTheme.titleLarge?.color, fontSize: 16, fontWeight: FontWeight.bold)),
+                  Text(l10n.online, style: const TextStyle(color: Colors.green, fontSize: 12)),
                 ],
               ),
             ],
@@ -119,10 +122,14 @@ class _ChatScreenState extends State<ChatScreen> {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 10),
               margin: const EdgeInsets.all(10),
-              decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(10), border: Border.all(color: Colors.grey.shade300)),
+              decoration: BoxDecoration(
+                color: theme.cardColor, 
+                borderRadius: BorderRadius.circular(10), 
+                border: Border.all(color: theme.dividerColor)
+              ),
               child: Row(
                 children: [
-                  const Icon(Icons.book, size: 20, color: Colors.grey),
+                  Icon(Icons.book, size: 20, color: theme.hintColor),
                   const SizedBox(width: 10),
                   Expanded(
                     child: Column(
@@ -154,7 +161,7 @@ class _ChatScreenState extends State<ChatScreen> {
                       margin: const EdgeInsets.only(bottom: 12),
                       padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 10),
                       decoration: BoxDecoration(
-                        color: isMe ? const Color(0xFF00BFA5) : Colors.white,
+                        color: isMe ? const Color(0xFF00BFA5) : theme.cardColor,
                         borderRadius: BorderRadius.only(
                           topLeft: const Radius.circular(15),
                           topRight: const Radius.circular(15),
@@ -165,9 +172,9 @@ class _ChatScreenState extends State<ChatScreen> {
                       child: Column(
                         crossAxisAlignment: isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
                         children: [
-                          Text(msg['text'] ?? "", style: TextStyle(color: isMe ? Colors.white : Colors.black87, fontSize: 15)),
+                          Text(msg['text'] ?? "", style: TextStyle(color: isMe ? Colors.white : theme.textTheme.bodyLarge?.color, fontSize: 15)),
                           const SizedBox(height: 3),
-                          Text(time, style: TextStyle(color: isMe ? Colors.white70 : Colors.grey, fontSize: 10)),
+                          Text(time, style: TextStyle(color: isMe ? Colors.white70 : theme.hintColor, fontSize: 10)),
                         ],
                       ),
                     ),
@@ -177,18 +184,20 @@ class _ChatScreenState extends State<ChatScreen> {
             ),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-              decoration: const BoxDecoration(color: Colors.white),
+              decoration: BoxDecoration(color: theme.cardColor),
               child: SafeArea(
                 child: Row(
                   children: [
                     Expanded(
                       child: TextField(
                         controller: _messageController,
+                        style: TextStyle(color: theme.textTheme.bodyLarge?.color),
                         decoration: InputDecoration(
-                          hintText: "Type a message...",
+                          hintText: l10n.typeAMessage,
+                          hintStyle: TextStyle(color: theme.hintColor),
                           border: OutlineInputBorder(borderRadius: BorderRadius.circular(20), borderSide: BorderSide.none),
                           filled: true,
-                          fillColor: Colors.grey[100],
+                          fillColor: theme.brightness == Brightness.dark ? Colors.grey[900] : Colors.grey[100],
                           contentPadding: const EdgeInsets.symmetric(horizontal: 15, vertical: 10),
                         ),
                       ),
@@ -201,7 +210,7 @@ class _ChatScreenState extends State<ChatScreen> {
                         icon: chatProvider.isLoading && chatProvider.activeConversationId == null
                             ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
                             : const Icon(Icons.send, color: Colors.white, size: 20),
-                        onPressed: _sendMessage,
+                        onPressed: () => _sendMessage(l10n),
                       ),
                     ),
                   ],

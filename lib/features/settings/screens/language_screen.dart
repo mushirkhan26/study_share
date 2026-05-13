@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../l10n/app_localizations.dart';
 import 'package:provider/provider.dart';
 import '../../../config/theme/app_colors.dart';
 import '../../../core/providers/ui_provider.dart';
@@ -9,28 +10,26 @@ class LanguageScreen extends StatelessWidget {
   final List<Map<String, dynamic>> _languages = const [
     {'name': 'English', 'sub': 'Default Language', 'code': 'en'},
     {'name': 'Hindi', 'sub': 'हिन्दी', 'code': 'hi'},
-    {'name': 'Spanish', 'sub': 'Español', 'code': 'es'},
-    {'name': 'French', 'sub': 'Français', 'code': 'fr'},
-    {'name': 'Arabic', 'sub': 'العربية', 'code': 'ar'},
   ];
 
   @override
   Widget build(BuildContext context) {
     final uiProvider = Provider.of<UIProvider>(context);
+    final l10n = AppLocalizations.of(context)!;
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: uiProvider.themeMode == ThemeMode.dark ? Colors.black : Colors.white,
       appBar: AppBar(
-        title: const Text("App Language", style: TextStyle(fontWeight: FontWeight.bold)),
-        backgroundColor: Colors.white,
+        title: Text(l10n.appName, style: const TextStyle(fontWeight: FontWeight.bold)),
+        backgroundColor: uiProvider.themeMode == ThemeMode.dark ? Colors.black : Colors.white,
         elevation: 0,
-        iconTheme: const IconThemeData(color: Colors.black),
+        iconTheme: IconThemeData(color: uiProvider.themeMode == ThemeMode.dark ? Colors.white : Colors.black),
       ),
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const SizedBox(height: 10),
-          _buildSectionHeader("Select Language"),
+          _buildSectionHeader(l10n.selectLanguage),
           
           Expanded(
             child: ListView.builder(
@@ -42,6 +41,7 @@ class LanguageScreen extends StatelessWidget {
                   subtitle: lang['sub']!,
                   isSelected: uiProvider.locale.languageCode == lang['code'],
                   onTap: () => uiProvider.setLocale(Locale(lang['code'])),
+                  isDark: uiProvider.themeMode == ThemeMode.dark,
                 );
               },
             ),
@@ -50,7 +50,7 @@ class LanguageScreen extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.all(20.0),
             child: Text(
-              "Changing the language will update the app's user interface text.",
+              l10n.languageChangeNotice,
               textAlign: TextAlign.center,
               style: TextStyle(color: Colors.grey.shade600, fontSize: 13),
             ),
@@ -80,13 +80,14 @@ class LanguageScreen extends StatelessWidget {
     required String subtitle,
     required bool isSelected,
     required VoidCallback onTap,
+    required bool isDark,
   }) {
     return ListTile(
       contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 5),
       leading: Container(
         padding: const EdgeInsets.all(10),
         decoration: BoxDecoration(
-          color: isSelected ? AppColors.primary.withValues(alpha: 0.1) : Colors.grey[100],
+          color: isSelected ? AppColors.primary.withValues(alpha: 0.1) : (isDark ? Colors.grey[900] : Colors.grey[100]),
           shape: BoxShape.circle,
         ),
         child: Icon(
@@ -100,7 +101,7 @@ class LanguageScreen extends StatelessWidget {
         style: TextStyle(
           fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
           fontSize: 16,
-          color: isSelected ? AppColors.primary : Colors.black87,
+          color: isSelected ? AppColors.primary : (isDark ? Colors.white70 : Colors.black87),
         ),
       ),
       subtitle: Text(subtitle, style: const TextStyle(fontSize: 12, color: Colors.grey)),

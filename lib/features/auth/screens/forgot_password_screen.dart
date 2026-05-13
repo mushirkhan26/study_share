@@ -1,32 +1,81 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
+import '../../../l10n/app_localizations.dart';
 import '../../../config/theme/app_colors.dart';
-import '../../../core/constants/app_constants.dart';
 import '../../../core/utils/ui_utils.dart';
 import '../../../core/utils/validation_utils.dart';
+import '../../../core/providers/auth_provider.dart';
 
-class ForgotPasswordScreen extends StatelessWidget {
-  ForgotPasswordScreen({super.key});
+class ForgotPasswordScreen extends StatefulWidget {
+  const ForgotPasswordScreen({super.key});
 
+  @override
+  State<ForgotPasswordScreen> createState() => _ForgotPasswordScreenState();
+}
+
+class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
+  final _otpController = TextEditingController();
+  final _newPasswordController = TextEditingController();
+  
+  bool _otpSent = false;
 
-  void _handleResetPassword(BuildContext context) {
+  Future<void> _handleRequestOTP(AppLocalizations l10n) async {
     if (_formKey.currentState!.validate()) {
-      UIUtils.showSnackBar(context, "Password reset link sent to your email!");
-      context.pop();
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      final error = await authProvider.forgotPassword(_emailController.text.trim());
+
+      if (error == null) {
+        setState(() => _otpSent = true);
+        if (mounted) UIUtils.showSnackBar(context, l10n.otpSent);
+      } else {
+        if (mounted) UIUtils.showSnackBar(context, error, isError: true);
+      }
+    }
+  }
+
+  Future<void> _handleResetPassword(AppLocalizations l10n) async {
+    if (_otpController.text.length != 6) {
+      UIUtils.showSnackBar(context, l10n.enter6DigitOTP, isError: true);
+      return;
+    }
+    if (_newPasswordController.text.length < 6) {
+      UIUtils.showSnackBar(context, l10n.passwordTooShort, isError: true);
+      return;
+    }
+
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final error = await authProvider.resetPassword(
+      _emailController.text.trim(),
+      _otpController.text.trim(),
+      _newPasswordController.text,
+    );
+
+    if (error == null) {
+      if (mounted) {
+        UIUtils.showSnackBar(context, l10n.passwordResetSuccess);
+        context.pop();
+      }
+    } else {
+      if (mounted) UIUtils.showSnackBar(context, error, isError: true);
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context)!;
+    final authProvider = Provider.of<AuthProvider>(context);
+
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new, color: Colors.black),
+          icon: Icon(Icons.arrow_back_ios_new, color: theme.brightness == Brightness.dark ? Colors.white : Colors.black),
           onPressed: () => context.pop(),
         ),
       ),
@@ -40,27 +89,51 @@ class ForgotPasswordScreen extends StatelessWidget {
               children: [
                 const SizedBox(height: 20),
                 Center(
-                  child: Image.asset(AppConstants.logo, height: 100,
-                      errorBuilder: (context, e, s) => const Icon(Icons.lock_reset_rounded, size: 80, color: AppColors.primary)),
+                  child: Icon(_otpSent ? Icons.mark_email_read_rounded : Icons.lock_reset_rounded, 
+                    size: 80, color: AppColors.primary),
                 ),
                 const SizedBox(height: 30),
-                const Text("Forgot Password?",
-                    style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Colors.black87)),
+                Text(_otpSent ? l10n.verifyOTP : l10n.forgotPassword,
+                    style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: theme.textTheme.titleLarge?.color)),
                 const SizedBox(height: 10),
-                const Text(
-                    "Enter your email address and we'll send you a link to reset your password.",
-                    style: TextStyle(fontSize: 16, color: Colors.grey)),
+                Text(
+                    _otpSent 
+                      ? l10n.enter6DigitCode(_emailController.text)
+                      : l10n.enterEmailToReset,
+                    style: TextStyle(fontSize: 16, color: theme.hintColor)),
 
                 const SizedBox(height: 40),
 
-                const Text("Email Address", style: TextStyle(fontWeight: FontWeight.w600)),
-                const SizedBox(height: 8),
-                TextFormField(
-                  controller: _emailController,
-                  keyboardType: TextInputType.emailAddress,
-                  decoration: _inputDecoration("Enter your email", Icons.email_outlined),
-                  validator: ValidationUtils.validateEmail,
-                ),
+                if (!_otpSent) ...[
+                  Text(l10n.emailAddress, style: const TextStyle(fontWeight: FontWeight.w600)),
+                  const SizedBox(height: 8),
+                  TextFormField(
+                    controller: _emailController,
+                    keyboardType: TextInputType.emailAddress,
+                    style: TextStyle(color: theme.textTheme.bodyLarge?.color),
+                    decoration: _inputDecoration(l10n.enterEmail, Icons.email_outlined, theme),
+                    validator: ValidationUtils.validateEmail,
+                  ),
+                ] else ...[
+                  Text(l10n.enterOTP, style: const TextStyle(fontWeight: FontWeight.w600)),
+                  const SizedBox(height: 8),
+                  TextFormField(
+                    controller: _otpController,
+                    keyboardType: TextInputType.number,
+                    maxLength: 6,
+                    style: TextStyle(color: theme.textTheme.bodyLarge?.color),
+                    decoration: _inputDecoration(l10n.otpHint, Icons.security, theme),
+                  ),
+                  const SizedBox(height: 20),
+                  Text(l10n.newPassword, style: const TextStyle(fontWeight: FontWeight.w600)),
+                  const SizedBox(height: 8),
+                  TextFormField(
+                    controller: _newPasswordController,
+                    obscureText: true,
+                    style: TextStyle(color: theme.textTheme.bodyLarge?.color),
+                    decoration: _inputDecoration(l10n.newPasswordHint, Icons.lock_outline, theme),
+                  ),
+                ],
 
                 const SizedBox(height: 40),
 
@@ -68,16 +141,28 @@ class ForgotPasswordScreen extends StatelessWidget {
                   width: double.infinity,
                   height: 55,
                   child: ElevatedButton(
-                    onPressed: () => _handleResetPassword(context),
+                    onPressed: authProvider.isLoading 
+                      ? null 
+                      : (_otpSent ? () => _handleResetPassword(l10n) : () => _handleRequestOTP(l10n)),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.primary,
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                       elevation: 0,
                     ),
-                    child: const Text("Send Reset Link", 
-                        style: TextStyle(fontSize: 18, color: Colors.white, fontWeight: FontWeight.bold)),
+                    child: authProvider.isLoading
+                      ? const CircularProgressIndicator(color: Colors.white)
+                      : Text(_otpSent ? l10n.resetPassword : l10n.sendOTP, 
+                          style: const TextStyle(fontSize: 18, color: Colors.white, fontWeight: FontWeight.bold)),
                   ),
                 ),
+                
+                if (_otpSent) 
+                  Center(
+                    child: TextButton(
+                      onPressed: () => setState(() => _otpSent = false),
+                      child: Text(l10n.changeEmail, style: TextStyle(color: theme.hintColor)),
+                    ),
+                  ),
               ],
             ),
           ),
@@ -86,12 +171,13 @@ class ForgotPasswordScreen extends StatelessWidget {
     );
   }
 
-  InputDecoration _inputDecoration(String hint, IconData icon) {
+  InputDecoration _inputDecoration(String hint, IconData icon, ThemeData theme) {
     return InputDecoration(
       hintText: hint,
+      hintStyle: TextStyle(color: theme.hintColor),
       prefixIcon: Icon(icon, color: AppColors.primary),
       filled: true,
-      fillColor: Colors.grey[100],
+      fillColor: theme.brightness == Brightness.dark ? Colors.grey[900] : Colors.grey[100],
       border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
       contentPadding: const EdgeInsets.symmetric(vertical: 16),
     );

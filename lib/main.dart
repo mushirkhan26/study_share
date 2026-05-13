@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
+import 'l10n/app_localizations.dart';
 import 'package:provider/provider.dart';
 import 'config/navigation/app_router.dart';
-import 'config/theme/app_colors.dart';
+import 'config/theme/app_theme.dart';
 import 'core/providers/auth_provider.dart';
 import 'core/providers/book_provider.dart';
 import 'core/providers/chat_provider.dart';
@@ -38,16 +40,26 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final uiProvider = Provider.of<UIProvider>(context);
+
     return MaterialApp.router(
       title:'Study Share',
       debugShowCheckedModeBanner: false,
 
       // 🎨 Theme Setup
-      theme: ThemeData(
-        primaryColor: AppColors.primary,
-        scaffoldBackgroundColor: Colors.white,
-        useMaterial3: true,
-      ),
+      theme: AppTheme.lightTheme,
+      darkTheme: AppTheme.darkTheme,
+      themeMode: uiProvider.themeMode,
+
+      // 🌍 Localization Setup
+      locale: uiProvider.locale,
+      supportedLocales: AppLocalizations.supportedLocales,
+      localizationsDelegates: const [
+        AppLocalizations.delegate,
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
 
       // 🛣️ Routing Setup (GoRouter connect ho raha hai)
       routerConfig: appRouter,

@@ -25,13 +25,14 @@ class BookCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: theme.cardColor,
         borderRadius: BorderRadius.circular(15),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
+            color: Colors.black.withValues(alpha: theme.brightness == Brightness.dark ? 0.2 : 0.05),
             blurRadius: 10,
             offset: const Offset(0, 5),
           ),
@@ -45,7 +46,7 @@ class BookCard extends StatelessWidget {
             child: Container(
               width: double.infinity,
               decoration: BoxDecoration(
-                color: Colors.grey[200],
+                color: theme.brightness == Brightness.dark ? Colors.grey[900] : Colors.grey[200],
                 borderRadius: const BorderRadius.vertical(top: Radius.circular(15)),
               ),
               child: UrlUtils.normalizeImageUrl(imageUrl) != null
@@ -55,10 +56,10 @@ class BookCard extends StatelessWidget {
                         imageUrl: UrlUtils.normalizeImageUrl(imageUrl)!,
                         fit: BoxFit.cover,
                         placeholder: (context, url) => const SkeletonLoader(width: double.infinity, height: double.infinity, borderRadius: 0),
-                        errorWidget: (context, url, error) => const Icon(Icons.menu_book, size: 50, color: Colors.grey),
+                        errorWidget: (context, url, error) => Icon(Icons.menu_book, size: 50, color: theme.hintColor),
                       ),
                     )
-                  : const Icon(Icons.menu_book, size: 50, color: Colors.grey),
+                  : Icon(Icons.menu_book, size: 50, color: theme.hintColor),
             ),
           ),
 
@@ -73,7 +74,7 @@ class BookCard extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     _buildBadge(condition, _getConditionColor(condition)),
-                    Text(tag, style: const TextStyle(fontSize: 10, color: Colors.grey, fontWeight: FontWeight.bold)),
+                    Text(tag, style: TextStyle(fontSize: 10, color: theme.hintColor, fontWeight: FontWeight.bold)),
                   ],
                 ),
                 const SizedBox(height: 8),
@@ -89,15 +90,23 @@ class BookCard extends StatelessWidget {
                   author,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(color: Colors.grey, fontSize: 12),
+                  style: TextStyle(color: theme.hintColor, fontSize: 12),
                 ),
                 const SizedBox(height: 8),
 
                 // Prices
                 Row(
                   children: [
+                    const Text(
+                      "₹",
+                      style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                          color: Color(0xFF00BFA5)
+                      ),
+                    ),
                     Text(
-                      "₹$sellingPrice",
+                      "$sellingPrice",
                       style: const TextStyle(
                           fontWeight: FontWeight.bold,
                           fontSize: 16,
@@ -107,8 +116,8 @@ class BookCard extends StatelessWidget {
                     const SizedBox(width: 8),
                     Text(
                       "₹$originalPrice",
-                      style: const TextStyle(
-                        color: Colors.grey,
+                      style: TextStyle(
+                        color: theme.hintColor,
                         fontSize: 12,
                         decoration: TextDecoration.lineThrough, // Kata hua price
                       ),

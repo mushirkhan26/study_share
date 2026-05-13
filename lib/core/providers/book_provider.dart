@@ -58,7 +58,7 @@ class BookProvider extends ChangeNotifier {
     required String condition,
     required String tag,
     String? description,
-    required File imageFile,
+    required List<File> imageFiles,
   }) async {
     _isLoading = true;
     notifyListeners();
@@ -71,7 +71,7 @@ class BookProvider extends ChangeNotifier {
       condition: condition,
       tag: tag,
       description: description,
-      imageFile: imageFile,
+      imageFiles: imageFiles,
     );
 
     _isLoading = false;

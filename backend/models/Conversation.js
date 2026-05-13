@@ -13,8 +13,10 @@ const Conversation = sequelize.define('Conversation', {
 });
 
 // Associations
+User.hasMany(Conversation, { as: 'buyerConversations', foreignKey: 'buyerId', onDelete: 'CASCADE' });
+User.hasMany(Conversation, { as: 'sellerConversations', foreignKey: 'sellerId', onDelete: 'CASCADE' });
 Conversation.belongsTo(User, { as: 'buyer', foreignKey: 'buyerId' });
 Conversation.belongsTo(User, { as: 'seller', foreignKey: 'sellerId' });
-Conversation.belongsTo(Book, { as: 'book', foreignKey: 'bookId' });
+Conversation.belongsTo(Book, { as: 'book', foreignKey: 'bookId', onDelete: 'CASCADE' });
 
 module.exports = Conversation;

@@ -15,6 +15,7 @@ import '../../features/profile/screens/profile_screen.dart';
 import '../../features/profile/screens/edit_profile_screen.dart';
 import '../../features/notifications/screens/notifications_screen.dart';
 import '../../features/settings/screens/privacy_security_screen.dart';
+import '../../features/settings/screens/active_sessions_screen.dart';
 import '../../features/settings/screens/appearance_screen.dart';
 import '../../features/settings/screens/language_screen.dart';
 import '../../features/settings/screens/help_center_screen.dart';
@@ -127,6 +128,10 @@ final GoRouter appRouter = GoRouter(
     GoRoute(
       path: AppRoutes.privacySecurity,
       builder: (context, state) => const PrivacySecurityScreen(),
+    ),
+    GoRoute(
+      path: AppRoutes.activeSessions,
+      builder: (context, state) => const ActiveSessionsScreen(),
     ),
     GoRoute(
       path: AppRoutes.appearance,

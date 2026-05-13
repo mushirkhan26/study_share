@@ -13,7 +13,11 @@ router.get('/', async (req, res) => {
 
     let query = {
       where: { isSold: false },
-      include: [{ model: User, as: 'seller', attributes: ['id', 'username', 'email'] }],
+      include: [{
+        model: User,
+        as: 'seller',
+        attributes: ['id', 'username', 'email', 'phoneNumber', 'isPrivateProfile', 'showPhoneNumber']
+      }],
       order: [['createdAt', 'DESC']]
     };
 
@@ -44,17 +48,17 @@ router.get('/', async (req, res) => {
 });
 
 // @desc    Post a new book (Sellers only)
-// Note: Use upload.single('image') to handle the book photo
-router.post('/', protect, authorize('seller'), upload.single('image'), async (req, res) => {
+// Note: Use upload.array('images', 3) to handle multiple book photos
+router.post('/', protect, authorize('seller'), upload.array('images', 3), async (req, res) => {
   console.log('--- BOOK UPLOAD REQUEST START ---');
   console.log('Body:', req.body);
-  console.log('File:', req.file ? req.file.path : 'No file uploaded');
+  console.log('Files:', req.files ? req.files.length : 'No files uploaded');
 
   const { title, author, sellingPrice, originalPrice, condition, tag, description } = req.body;
 
   try {
-    // If image was uploaded, req.file will have the Cloudinary URL
-    const imageUrl = req.file ? req.file.path : null;
+    // If images were uploaded, req.files will have the Cloudinary URLs
+    const imageUrls = req.files ? req.files.map(file => file.path) : [];
 
     const book = await Book.create({
       title,
@@ -64,7 +68,7 @@ router.post('/', protect, authorize('seller'), upload.single('image'), async (re
       condition,
       tag,
       description,
-      images: imageUrl ? [imageUrl] : [],
+      images: imageUrls,
       sellerId: req.user.id,
     });
     console.log('Book created successfully:', book.id);

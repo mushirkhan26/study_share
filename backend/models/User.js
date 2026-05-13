@@ -33,6 +33,30 @@ const User = sequelize.define('User', {
   },
   profileImage: {
     type: DataTypes.STRING
+  },
+  phoneNumber: {
+    type: DataTypes.STRING,
+    allowNull: true
+  },
+  isTwoFactorEnabled: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: false
+  },
+  isPrivateProfile: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: false
+  },
+  showPhoneNumber: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: false
+  },
+  otp: {
+    type: DataTypes.STRING,
+    allowNull: true
+  },
+  otpExpires: {
+    type: DataTypes.DATE,
+    allowNull: true
   }
 }, {
   hooks: {

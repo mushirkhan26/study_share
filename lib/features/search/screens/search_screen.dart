@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
+import '../../../l10n/app_localizations.dart';
 import '../../../widgets/book_card.dart';
 import '../../../widgets/skeleton_loaders.dart';
 import '../../../config/navigation/app_routes.dart';
@@ -16,6 +17,20 @@ class SearchScreen extends StatelessWidget {
 
   final List<String> _courses = const ['All', 'BCA', 'B.Tech', 'B.Sc', 'BA', 'B.Com', 'Novels', 'Other'];
 
+  String _getCourseLabel(String course, AppLocalizations l10n) {
+    switch (course) {
+      case 'All': return l10n.all;
+      case 'BCA': return l10n.bca;
+      case 'B.Tech': return l10n.btech;
+      case 'B.Sc': return l10n.bsc;
+      case 'BA': return l10n.ba;
+      case 'B.Com': return l10n.bcom;
+      case 'Novels': return l10n.novels;
+      case 'Other': return l10n.other;
+      default: return course;
+    }
+  }
+
   void _onSearchChanged(BuildContext context, String query) {
     if (_timerContainer.timer?.isActive ?? false) _timerContainer.timer?.cancel();
     _timerContainer.timer = Timer(const Duration(milliseconds: 500), () {
@@ -29,6 +44,8 @@ class SearchScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context)!;
     final bookProvider = Provider.of<BookProvider>(context);
 
     // Initial fetch
@@ -39,11 +56,11 @@ class SearchScreen extends StatelessWidget {
     });
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: theme.scaffoldBackgroundColor,
         elevation: 0,
-        title: const Text("Search Books", style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
+        title: Text(l10n.searchBooks, style: TextStyle(color: theme.brightness == Brightness.dark ? Colors.white : Colors.black, fontWeight: FontWeight.bold)),
         actions: [
           ValueListenableBuilder<String>(
             valueListenable: _searchQuery,
@@ -76,11 +93,13 @@ class SearchScreen extends StatelessWidget {
           children: [
             TextField(
               onChanged: (v) => _onSearchChanged(context, v),
+              style: TextStyle(color: theme.textTheme.bodyLarge?.color),
               decoration: InputDecoration(
-                hintText: "Search by title or author...",
+                hintText: l10n.searchHint,
+                hintStyle: TextStyle(color: theme.hintColor),
                 prefixIcon: const Icon(Icons.search, color: Color(0xFF00BFA5)),
                 filled: true,
-                fillColor: Colors.grey[100],
+                fillColor: theme.brightness == Brightness.dark ? Colors.grey[900] : Colors.grey[100],
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(15),
                   borderSide: BorderSide.none,
@@ -89,7 +108,7 @@ class SearchScreen extends StatelessWidget {
             ),
             const SizedBox(height: 20),
 
-            const Text("Course / Category", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+            Text(l10n.courseCategory, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
             const SizedBox(height: 10),
             SingleChildScrollView(
               scrollDirection: Axis.horizontal,
@@ -98,7 +117,7 @@ class SearchScreen extends StatelessWidget {
                 builder: (context, currentCourse, child) {
                   return Row(
                     children: _courses.map((course) => _buildFilterChip(
-                      label: course,
+                      label: _getCourseLabel(course, l10n),
                       isSelected: currentCourse == course,
                       onTap: () {
                         _selectedCourse.value = course;
@@ -107,6 +126,7 @@ class SearchScreen extends StatelessWidget {
                           tag: course,
                         );
                       },
+                      theme: theme,
                     )).toList(),
                   );
                 }
@@ -115,8 +135,8 @@ class SearchScreen extends StatelessWidget {
 
             const SizedBox(height: 25),
             Text(
-              bookProvider.isLoading ? "Searching..." : "Results (${bookProvider.books.length} found)", 
-              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.grey)
+              bookProvider.isLoading ? l10n.searching : l10n.resultsFound(bookProvider.books.length), 
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: theme.hintColor)
             ),
             const SizedBox(height: 15),
 
@@ -133,7 +153,7 @@ class SearchScreen extends StatelessWidget {
                     itemBuilder: (context, index) => const BookCardSkeleton(),
                   )
                 : bookProvider.books.isEmpty 
-                  ? _buildEmptyResults()
+                  ? _buildEmptyResults(theme, l10n)
                   : GridView.builder(
                       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                         crossAxisCount: 2,
@@ -166,34 +186,34 @@ class SearchScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildEmptyResults() {
+  Widget _buildEmptyResults(ThemeData theme, AppLocalizations l10n) {
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.search_off_rounded, size: 80, color: Colors.grey[300]),
+          Icon(Icons.search_off_rounded, size: 80, color: theme.dividerColor),
           const SizedBox(height: 15),
-          const Text("No books found matching your search.", style: TextStyle(color: Colors.grey, fontSize: 16)),
+          Text(l10n.noBooksMatching, style: TextStyle(color: theme.hintColor, fontSize: 16)),
         ],
       ),
     );
   }
 
-  Widget _buildFilterChip({required String label, required bool isSelected, required VoidCallback onTap}) {
+  Widget _buildFilterChip({required String label, required bool isSelected, required VoidCallback onTap, required ThemeData theme}) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
         margin: const EdgeInsets.only(right: 10),
         padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 8),
         decoration: BoxDecoration(
-          color: isSelected ? const Color(0xFF00BFA5) : Colors.white,
+          color: isSelected ? const Color(0xFF00BFA5) : theme.cardColor,
           borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: isSelected ? const Color(0xFF00BFA5) : Colors.grey.shade300),
+          border: Border.all(color: isSelected ? const Color(0xFF00BFA5) : theme.dividerColor),
         ),
         child: Text(
           label,
           style: TextStyle(
-            color: isSelected ? Colors.white : Colors.black87,
+            color: isSelected ? Colors.white : theme.textTheme.bodyLarge?.color,
             fontWeight: FontWeight.w500,
           ),
         ),

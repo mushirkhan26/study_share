@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import '../../../l10n/app_localizations.dart';
 import '../../../config/theme/app_colors.dart';
 import '../../../core/providers/notification_provider.dart';
 
@@ -9,6 +10,8 @@ class NotificationsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context)!;
     final notificationProvider = Provider.of<NotificationProvider>(context);
 
     // Initial fetch
@@ -18,30 +21,30 @@ class NotificationsScreen extends StatelessWidget {
       }
     });
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        title: const Text("Notifications", style: TextStyle(fontWeight: FontWeight.bold)),
-        backgroundColor: Colors.white,
+        title: Text(l10n.notifications, style: const TextStyle(fontWeight: FontWeight.bold)),
+        backgroundColor: theme.scaffoldBackgroundColor,
         elevation: 0,
-        iconTheme: const IconThemeData(color: Colors.black),
+        iconTheme: IconThemeData(color: theme.brightness == Brightness.dark ? Colors.white : Colors.black),
         actions: [
           if (notificationProvider.notifications.any((n) => n['isRead'] == false))
             TextButton(
               onPressed: () => notificationProvider.markAllAsRead(),
-              child: const Text("Mark all as read", style: TextStyle(color: AppColors.primary, fontSize: 12)),
+              child: Text(l10n.markAllAsRead, style: const TextStyle(color: AppColors.primary, fontSize: 12)),
             ),
         ],
       ),
       body: notificationProvider.isLoading && notificationProvider.notifications.isEmpty
           ? const Center(child: CircularProgressIndicator())
           : notificationProvider.notifications.isEmpty
-              ? _buildEmptyState()
+              ? _buildEmptyState(theme, l10n)
               : RefreshIndicator(
                   onRefresh: () => notificationProvider.fetchNotifications(),
                   child: ListView.separated(
                     padding: const EdgeInsets.all(10),
                     itemCount: notificationProvider.notifications.length,
-                    separatorBuilder: (context, index) => const Divider(height: 1, color: Color(0xFFEEEEEE)),
+                    separatorBuilder: (context, index) => Divider(height: 1, color: theme.dividerColor),
                     itemBuilder: (context, index) {
                       final item = notificationProvider.notifications[index];
                       return GestureDetector(
@@ -50,7 +53,7 @@ class NotificationsScreen extends StatelessWidget {
                              notificationProvider.markAsRead(item['id'] ?? item['_id']);
                           }
                         },
-                        child: _buildNotificationItem(item),
+                        child: _buildNotificationItem(item, theme),
                       );
                     },
                   ),
@@ -58,7 +61,7 @@ class NotificationsScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildNotificationItem(Map<String, dynamic> item) {
+  Widget _buildNotificationItem(Map<String, dynamic> item, ThemeData theme) {
     final bool isRead = item['isRead'] ?? false;
     final String? timeStr = item['createdAt'];
     final String formattedTime = timeStr != null 
@@ -76,7 +79,7 @@ class NotificationsScreen extends StatelessWidget {
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 15),
-      color: isRead ? Colors.white : AppColors.primary.withValues(alpha: 0.03),
+      color: isRead ? theme.scaffoldBackgroundColor : AppColors.primary.withValues(alpha: 0.03),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -113,12 +116,12 @@ class NotificationsScreen extends StatelessWidget {
                 const SizedBox(height: 5),
                 Text(
                   item['message'] ?? "",
-                  style: TextStyle(color: Colors.grey[700], fontSize: 13, height: 1.4),
+                  style: TextStyle(color: theme.textTheme.bodyMedium?.color?.withValues(alpha: 0.7), fontSize: 13, height: 1.4),
                 ),
                 const SizedBox(height: 8),
                 Text(
                   formattedTime,
-                  style: const TextStyle(color: Colors.grey, fontSize: 11),
+                  style: TextStyle(color: theme.hintColor, fontSize: 11),
                 ),
               ],
             ),
@@ -128,14 +131,14 @@ class NotificationsScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildEmptyState() {
+  Widget _buildEmptyState(ThemeData theme, AppLocalizations l10n) {
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.notifications_none_outlined, size: 80, color: Colors.grey[300]),
+          Icon(Icons.notifications_none_outlined, size: 80, color: theme.dividerColor),
           const SizedBox(height: 15),
-          const Text("No notifications yet", style: TextStyle(color: Colors.grey, fontSize: 16)),
+          Text(l10n.noNotifications, style: TextStyle(color: theme.hintColor, fontSize: 16)),
         ],
       ),
     );

@@ -23,6 +23,7 @@ class AppRoutes {
   static const String editProfile = '/edit-profile';
   static const String notifications = '/notifications';
   static const String privacySecurity = '/privacy-security';
+  static const String activeSessions = '/active-sessions';
   static const String appearance = '/appearance';
   static const String language = '/language';
   static const String helpCenter = '/help-center';

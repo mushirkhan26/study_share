@@ -15,14 +15,15 @@ class SkeletonLoader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Shimmer.fromColors(
-      baseColor: Colors.grey[300]!,
-      highlightColor: Colors.grey[100]!,
+      baseColor: isDark ? Colors.grey[800]! : Colors.grey[300]!,
+      highlightColor: isDark ? Colors.grey[700]! : Colors.grey[100]!,
       child: Container(
         width: width,
         height: height,
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: isDark ? Colors.grey[800] : Colors.white,
           borderRadius: BorderRadius.circular(borderRadius),
         ),
       ),
@@ -35,16 +36,17 @@ class BookCardSkeleton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: theme.cardColor,
         borderRadius: BorderRadius.circular(15),
-        border: Border.all(color: Colors.grey.shade200),
+        border: Border.all(color: theme.dividerColor),
       ),
-      child: Column(
+      child: const Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Expanded(
+          Expanded(
             child: SkeletonLoader(
               width: double.infinity,
               height: double.infinity,
@@ -52,7 +54,7 @@ class BookCardSkeleton extends StatelessWidget {
             ),
           ),
           Padding(
-            padding: const EdgeInsets.all(12.0),
+            padding: EdgeInsets.all(12.0),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -63,12 +65,12 @@ class BookCardSkeleton extends StatelessWidget {
                     SkeletonLoader(width: 30, height: 10, borderRadius: 4),
                   ],
                 ),
-                const SizedBox(height: 8),
-                const SkeletonLoader(width: 120, height: 16),
-                const SizedBox(height: 4),
-                const SkeletonLoader(width: 80, height: 12),
-                const SizedBox(height: 8),
-                const Row(
+                SizedBox(height: 8),
+                SkeletonLoader(width: 120, height: 16),
+                SizedBox(height: 4),
+                SkeletonLoader(width: 80, height: 12),
+                SizedBox(height: 8),
+                Row(
                   children: [
                     SkeletonLoader(width: 60, height: 20),
                     SizedBox(width: 8),
@@ -89,13 +91,14 @@ class NoteCardSkeleton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Container(
       margin: const EdgeInsets.only(bottom: 15),
       padding: const EdgeInsets.all(15),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: theme.cardColor,
         borderRadius: BorderRadius.circular(15),
-        border: Border.all(color: Colors.grey.shade200),
+        border: Border.all(color: theme.dividerColor),
       ),
       child: const Row(
         children: [
