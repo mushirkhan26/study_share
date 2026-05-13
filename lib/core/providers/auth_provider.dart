@@ -52,7 +52,7 @@ class AuthProvider extends ChangeNotifier {
     notifyListeners();
 
     final response = await _authService.login(email: email, password: password);
-    
+
     _isLoading = false;
     if (response.success && response.data != null) {
       if (response.message == '2FA_REQUIRED') {
@@ -72,7 +72,7 @@ class AuthProvider extends ChangeNotifier {
     notifyListeners();
 
     final response = await _authService.verify2FA(email: email, otp: otp);
-    
+
     _isLoading = false;
     if (response.success && response.data != null) {
       _user = response.data;

@@ -10,14 +10,28 @@ import '../../../core/utils/validation_utils.dart';
 import '../../../core/providers/auth_provider.dart';
 import '../widgets/otp_verification_dialog.dart';
 
-class LoginScreen extends StatelessWidget {
-  LoginScreen({super.key});
+class LoginScreen extends StatefulWidget {
+  const LoginScreen({super.key});
 
+  @override
+  State<LoginScreen> createState() => _LoginScreenState();
+}
+
+class _LoginScreenState extends State<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+  final ValueNotifier<bool> _isPasswordVisible = ValueNotifier<bool>(false);
 
-  Future<void> _handleLogin(BuildContext context) async {
+  @override
+  void dispose() {
+    _emailController.dispose();
+    _passwordController.dispose();
+    _isPasswordVisible.dispose();
+    super.dispose();
+  }
+
+  Future<void> _handleLogin() async {
     if (_formKey.currentState!.validate()) {
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
       
@@ -26,7 +40,7 @@ class LoginScreen extends StatelessWidget {
         _passwordController.text,
       );
 
-      if (context.mounted) {
+      if (mounted) {
         final l10n = AppLocalizations.of(context)!;
         if (result == 'SUCCESS') {
           UIUtils.showSnackBar(context, l10n.loginSuccessful);
@@ -49,7 +63,6 @@ class LoginScreen extends StatelessWidget {
     final theme = Theme.of(context);
     final l10n = AppLocalizations.of(context)!;
     final authProvider = Provider.of<AuthProvider>(context);
-    final isPasswordVisible = ValueNotifier<bool>(false);
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
@@ -92,7 +105,7 @@ class LoginScreen extends StatelessWidget {
                 Text(l10n.password, style: const TextStyle(fontWeight: FontWeight.w600)),
                 const SizedBox(height: 8),
                 ValueListenableBuilder<bool>(
-                  valueListenable: isPasswordVisible,
+                  valueListenable: _isPasswordVisible,
                   builder: (context, visible, child) {
                     return TextFormField(
                       controller: _passwordController,
@@ -101,7 +114,7 @@ class LoginScreen extends StatelessWidget {
                       decoration: _inputDecoration(l10n.enterPassword, Icons.lock_outline, theme).copyWith(
                         suffixIcon: IconButton(
                           icon: Icon(visible ? Icons.visibility : Icons.visibility_off),
-                          onPressed: () => isPasswordVisible.value = !visible,
+                          onPressed: () => _isPasswordVisible.value = !visible,
                         ),
                       ),
                       validator: (value) => ValidationUtils.validatePassword(value),
@@ -123,7 +136,7 @@ class LoginScreen extends StatelessWidget {
                   width: double.infinity,
                   height: 55,
                   child: ElevatedButton(
-                    onPressed: authProvider.isLoading ? null : () => _handleLogin(context),
+                    onPressed: authProvider.isLoading ? null : _handleLogin,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.primary,
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),

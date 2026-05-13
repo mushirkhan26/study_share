@@ -127,27 +127,27 @@ class ApiHelper {
     try {
       switch (method.toUpperCase()) {
         case 'GET':
-          response = await http.get(url, headers: defaultHeaders);
+          response = await http.get(url, headers: defaultHeaders).timeout(const Duration(seconds: 30));
           break;
         case 'POST':
           response = await http.post(
             url,
             headers: defaultHeaders,
             body: body != null ? jsonEncode(body) : null,
-          );
+          ).timeout(const Duration(seconds: 30));
           break;
         case 'PUT':
-          response = await http.put(url, headers: defaultHeaders, body: body != null ? jsonEncode(body) : null);
+          response = await http.put(url, headers: defaultHeaders, body: body != null ? jsonEncode(body) : null).timeout(const Duration(seconds: 30));
           break;
         case 'PATCH':
           response = await http.patch(
             url,
             headers: defaultHeaders,
             body: body != null ? jsonEncode(body) : null,
-          );
+          ).timeout(const Duration(seconds: 30));
           break;
         case 'DELETE':
-          response = await http.delete(url, headers: defaultHeaders, body: body != null ? jsonEncode(body) : null);
+          response = await http.delete(url, headers: defaultHeaders, body: body != null ? jsonEncode(body) : null).timeout(const Duration(seconds: 30));
           break;
         default:
           throw BadRequestException('Invalid HTTP method');

@@ -44,13 +44,16 @@ router.post('/signup', async (req, res) => {
 // @desc    Login user
 router.post('/login', async (req, res) => {
   const { email, password } = req.body;
+  console.log(`[AUTH] Login attempt for: ${email}`);
 
   try {
     const user = await User.findOne({ where: { email } });
     if (user && (await user.comparePassword(password))) {
+      console.log(`[AUTH] Password verified for: ${email}`);
 
       // Check if 2FA is enabled
       if (user.isTwoFactorEnabled) {
+        console.log(`[AUTH] 2FA enabled for: ${email}. Generating OTP...`);
         const otp = Math.floor(100000 + Math.random() * 900000).toString();
         const otpExpires = new Date(Date.now() + 10 * 60 * 1000); // 10 mins
 
@@ -58,11 +61,14 @@ router.post('/login', async (req, res) => {
         user.otpExpires = otpExpires;
         await user.save();
 
+        console.log(`[AUTH] Sending OTP to: ${user.email}`);
         const emailSent = await sendOTP(user.email, otp);
         if (!emailSent) {
-          return res.status(500).json({ message: 'Failed to send OTP email' });
+          console.error(`[AUTH] Failed to send OTP email to: ${user.email}`);
+          return res.status(500).json({ message: 'Failed to send OTP email. Please check your email configuration or try again later.' });
         }
 
+        console.log(`[AUTH] OTP sent successfully to: ${user.email}`);
         return res.json({
           requires2FA: true,
           email: user.email,
@@ -98,10 +104,12 @@ router.post('/login', async (req, res) => {
 // @desc    Verify OTP for 2FA
 router.post('/verify-2fa', async (req, res) => {
   const { email, otp } = req.body;
+  console.log(`[AUTH] Verifying 2FA OTP for: ${email}`);
 
   try {
     const user = await User.findOne({ where: { email } });
     if (!user || user.otp !== otp || user.otpExpires < new Date()) {
+      console.warn(`[AUTH] Invalid or expired OTP for: ${email}`);
       return res.status(401).json({ message: 'Invalid or expired OTP' });
     }
 
