@@ -1,70 +1,43 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
 import '../../../widgets/book_card.dart';
+import '../../../widgets/skeleton_loaders.dart';
 import '../../../config/navigation/app_routes.dart';
-import '../../../core/api/network/book_service.dart';
+import '../../../core/providers/book_provider.dart';
 
-class SearchScreen extends StatefulWidget {
-  const SearchScreen({super.key});
+class SearchScreen extends StatelessWidget {
+  SearchScreen({super.key});
 
-  @override
-  State<SearchScreen> createState() => _SearchScreenState();
-}
+  final ValueNotifier<String> _selectedCourse = ValueNotifier<String>('All');
+  final ValueNotifier<String> _searchQuery = ValueNotifier<String>('');
+  final TimerContainer _timerContainer = TimerContainer();
 
-class _SearchScreenState extends State<SearchScreen> {
-  final BookService _bookService = BookService();
-  
-  // Filters state
-  String _selectedCourse = 'All';
-  String _searchQuery = '';
-  
-  List<dynamic> _books = [];
-  bool _isLoading = true;
-  Timer? _debounce;
+  final List<String> _courses = const ['All', 'BCA', 'B.Tech', 'B.Sc', 'BA', 'B.Com', 'Novels', 'Other'];
 
-  final List<String> _courses = ['All', 'BCA', 'B.Tech', 'B.Sc', 'BA', 'B.Com', 'Novels', 'Other'];
-
-  @override
-  void initState() {
-    super.initState();
-    _fetchBooks();
-  }
-
-  @override
-  void dispose() {
-    _debounce?.cancel();
-    super.dispose();
-  }
-
-  Future<void> _fetchBooks() async {
-    setState(() => _isLoading = true);
-    final response = await _bookService.getAllBooks(
-      search: _searchQuery,
-      tag: _selectedCourse,
-    );
-    if (response.success && response.data != null) {
-      setState(() {
-        _books = response.data!;
-        _isLoading = false;
-      });
-    } else {
-      setState(() => _isLoading = false);
-    }
-  }
-
-  void _onSearchChanged(String query) {
-    if (_debounce?.isActive ?? false) _debounce?.cancel();
-    _debounce = Timer(const Duration(milliseconds: 500), () {
-      setState(() {
-        _searchQuery = query;
-      });
-      _fetchBooks();
+  void _onSearchChanged(BuildContext context, String query) {
+    if (_timerContainer.timer?.isActive ?? false) _timerContainer.timer?.cancel();
+    _timerContainer.timer = Timer(const Duration(milliseconds: 500), () {
+      _searchQuery.value = query;
+      Provider.of<BookProvider>(context, listen: false).fetchAllBooks(
+        search: query,
+        tag: _selectedCourse.value,
+      );
     });
   }
 
   @override
   Widget build(BuildContext context) {
+    final bookProvider = Provider.of<BookProvider>(context);
+
+    // Initial fetch
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (bookProvider.books.isEmpty && !bookProvider.isLoading) {
+        bookProvider.fetchAllBooks();
+      }
+    });
+
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
@@ -72,17 +45,27 @@ class _SearchScreenState extends State<SearchScreen> {
         elevation: 0,
         title: const Text("Search Books", style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
         actions: [
-          if (_selectedCourse != 'All' || _searchQuery.isNotEmpty)
-            IconButton(
-              icon: const Icon(Icons.filter_alt_off_outlined, color: Color(0xFF00BFA5)),
-              onPressed: () {
-                setState(() {
-                  _selectedCourse = 'All';
-                  _searchQuery = '';
-                });
-                _fetchBooks();
-              },
-            )
+          ValueListenableBuilder<String>(
+            valueListenable: _searchQuery,
+            builder: (context, query, child) {
+              return ValueListenableBuilder<String>(
+                valueListenable: _selectedCourse,
+                builder: (context, course, child) {
+                  if (course != 'All' || query.isNotEmpty) {
+                    return IconButton(
+                      icon: const Icon(Icons.filter_alt_off_outlined, color: Color(0xFF00BFA5)),
+                      onPressed: () {
+                        _selectedCourse.value = 'All';
+                        _searchQuery.value = '';
+                        bookProvider.fetchAllBooks();
+                      },
+                    );
+                  }
+                  return const SizedBox.shrink();
+                }
+              );
+            }
+          )
         ],
         automaticallyImplyLeading: false,
       ),
@@ -91,9 +74,8 @@ class _SearchScreenState extends State<SearchScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // 🔎 Search Bar
             TextField(
-              onChanged: _onSearchChanged,
+              onChanged: (v) => _onSearchChanged(context, v),
               decoration: InputDecoration(
                 hintText: "Search by title or author...",
                 prefixIcon: const Icon(Icons.search, color: Color(0xFF00BFA5)),
@@ -107,35 +89,50 @@ class _SearchScreenState extends State<SearchScreen> {
             ),
             const SizedBox(height: 20),
 
-            // 🎛️ Course Filters
             const Text("Course / Category", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
             const SizedBox(height: 10),
             SingleChildScrollView(
               scrollDirection: Axis.horizontal,
-              child: Row(
-                children: _courses.map((course) => _buildFilterChip(
-                  label: course,
-                  isSelected: _selectedCourse == course,
-                  onTap: () {
-                    setState(() => _selectedCourse = course);
-                    _fetchBooks();
-                  },
-                )).toList(),
+              child: ValueListenableBuilder<String>(
+                valueListenable: _selectedCourse,
+                builder: (context, currentCourse, child) {
+                  return Row(
+                    children: _courses.map((course) => _buildFilterChip(
+                      label: course,
+                      isSelected: currentCourse == course,
+                      onTap: () {
+                        _selectedCourse.value = course;
+                        bookProvider.fetchAllBooks(
+                          search: _searchQuery.value,
+                          tag: course,
+                        );
+                      },
+                    )).toList(),
+                  );
+                }
               ),
             ),
 
             const SizedBox(height: 25),
             Text(
-              _isLoading ? "Searching..." : "Results (${_books.length} found)", 
+              bookProvider.isLoading ? "Searching..." : "Results (${bookProvider.books.length} found)", 
               style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.grey)
             ),
             const SizedBox(height: 15),
 
-            // 📊 Search Results Grid
             Expanded(
-              child: _isLoading 
-                ? const Center(child: CircularProgressIndicator())
-                : _books.isEmpty 
+              child: bookProvider.isLoading && bookProvider.books.isEmpty
+                ? GridView.builder(
+                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 2,
+                      crossAxisSpacing: 15,
+                      mainAxisSpacing: 15,
+                      childAspectRatio: 0.65,
+                    ),
+                    itemCount: 6,
+                    itemBuilder: (context, index) => const BookCardSkeleton(),
+                  )
+                : bookProvider.books.isEmpty 
                   ? _buildEmptyResults()
                   : GridView.builder(
                       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
@@ -144,9 +141,9 @@ class _SearchScreenState extends State<SearchScreen> {
                         mainAxisSpacing: 15,
                         childAspectRatio: 0.65,
                       ),
-                      itemCount: _books.length,
+                      itemCount: bookProvider.books.length,
                       itemBuilder: (context, index) {
-                        final book = _books[index];
+                        final book = bookProvider.books[index];
                         return GestureDetector(
                           onTap: () => context.push(AppRoutes.bookDetailRoute, extra: book),
                           child: BookCard(
@@ -182,7 +179,6 @@ class _SearchScreenState extends State<SearchScreen> {
     );
   }
 
-  // Filter Chip Widget
   Widget _buildFilterChip({required String label, required bool isSelected, required VoidCallback onTap}) {
     return GestureDetector(
       onTap: onTap,
@@ -204,4 +200,8 @@ class _SearchScreenState extends State<SearchScreen> {
       ),
     );
   }
+}
+
+class TimerContainer {
+  Timer? timer;
 }

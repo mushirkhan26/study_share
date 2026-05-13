@@ -1,80 +1,32 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import '../../../config/navigation/app_routes.dart';
-import '../../../core/models/user_model.dart';
-import '../../../core/api/network/auth_service.dart';
-import '../../../core/services/secure_storage_service.dart';
+import '../../../core/providers/auth_provider.dart';
 
-class ProfileScreen extends StatefulWidget {
+class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
 
   @override
-  State<ProfileScreen> createState() => _ProfileScreenState();
-}
-
-class _ProfileScreenState extends State<ProfileScreen> {
-  final AuthService _authService = AuthService();
-  final SecureStorageService _storage = SecureStorageService();
-  
-  UserModel? _user;
-  Map<String, dynamic>? _stats;
-  bool _isLoading = true;
-
-  @override
-  void initState() {
-    super.initState();
-    _loadProfile();
-  }
-
-  Future<void> _loadProfile() async {
-    // First load from storage for instant UI
-    final localData = await _storage.getUserData();
-    if (localData != null) {
-      setState(() {
-        _user = UserModel(
-          id: localData['userId'],
-          username: localData['username'],
-          email: localData['email'],
-          role: UserRoleExtension.fromString(localData['role']),
-          profileImage: localData['profileImage'],
-          college: localData['college'],
-        );
-        _isLoading = false;
-      });
-    }
-
-    // Then fetch fresh data from API
-    final response = await _authService.getUserProfile();
-    if (response.success && response.data != null) {
-      setState(() {
-        _user = response.data;
-      });
-      
-      // Load stats if seller
-      if (_user!.isSeller) {
-        final statsResponse = await _authService.getUserStats();
-        if (statsResponse.success) {
-          setState(() {
-            _stats = statsResponse.data;
-          });
-        }
-      }
-      
-      setState(() => _isLoading = false);
-    } else {
-      setState(() => _isLoading = false);
-    }
-  }
-
-  @override
   Widget build(BuildContext context) {
+    final authProvider = Provider.of<AuthProvider>(context);
+    final user = authProvider.user;
+    final stats = authProvider.stats;
     const Color primaryColor = Color(0xFF00BFA5);
 
-    if (_isLoading && _user == null) {
+    // Initial fetch if needed
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (user != null && authProvider.stats == null && user.isSeller) {
+         authProvider.fetchProfile();
+      }
+    });
+
+    if (authProvider.isLoading && user == null) {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
-    final bool isSeller = _user?.isSeller ?? false;
+    final bool isSeller = user?.isSeller ?? false;
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -87,14 +39,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
             icon: const Icon(Icons.edit_outlined, color: Colors.black),
             onPressed: () async {
               await context.push(AppRoutes.editProfile);
-              _loadProfile(); // Reload after editing
+              authProvider.fetchProfile();
             },
           ),
         ],
         automaticallyImplyLeading: false,
       ),
       body: RefreshIndicator(
-        onRefresh: _loadProfile,
+        onRefresh: () => authProvider.fetchProfile(),
         child: SingleChildScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
           child: Column(
@@ -105,20 +57,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
               Center(
                 child: CircleAvatar(
                   radius: 50,
-                  backgroundColor: primaryColor.withValues(alpha: 0.1),
-                  backgroundImage: _user?.profileImage != null ? NetworkImage(_user!.profileImage!) : null,
-                  child: _user?.profileImage == null 
+                  backgroundColor: primaryColor.withOpacity(0.1),
+                  backgroundImage: user?.profileImage != null ? CachedNetworkImageProvider(user!.profileImage!) : null,
+                  child: user?.profileImage == null 
                       ? const Icon(Icons.person, size: 50, color: primaryColor)
                       : null,
                 ),
               ),
               const SizedBox(height: 15),
-              Text(_user?.username ?? "User", style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
-              Text("${_user?.college ?? 'Student'} • Jodhpur", style: const TextStyle(color: Colors.grey, fontSize: 14)),
+              Text(user?.username ?? "User", style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+              Text("${user?.college ?? 'Student'} • Jodhpur", style: const TextStyle(color: Colors.grey, fontSize: 14)),
         
               const SizedBox(height: 25),
         
-              // --- 📊 Seller Stats (Optional for now) ---
+              // --- 📊 Seller Stats ---
               if (isSeller)
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -132,11 +84,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                       children: [
-                        _buildStatItem("Active Ads", "${_stats?['activeAds'] ?? 0}", primaryColor),
+                        _buildStatItem("Active Ads", "${stats?['activeAds'] ?? 0}", primaryColor),
                         Container(height: 40, width: 1, color: Colors.grey.shade300),
-                        _buildStatItem("Books Sold", "${_stats?['booksSold'] ?? 0}", Colors.black),
+                        _buildStatItem("Books Sold", "${stats?['booksSold'] ?? 0}", Colors.black),
                         Container(height: 40, width: 1, color: Colors.grey.shade300),
-                        _buildStatItem("Earnings", "₹${_stats?['earnings'] ?? 0}", Colors.green),
+                        _buildStatItem("Earnings", "₹${stats?['earnings'] ?? 0}", Colors.green),
                       ],
                     ),
                   ),

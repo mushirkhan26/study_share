@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:cached_network_image/cached_network_image.dart';
+import '../core/utils/url_utils.dart';
+import 'skeleton_loaders.dart';
 
 class BookCard extends StatelessWidget {
   final String title;
@@ -45,13 +48,14 @@ class BookCard extends StatelessWidget {
                 color: Colors.grey[200],
                 borderRadius: const BorderRadius.vertical(top: Radius.circular(15)),
               ),
-              child: imageUrl != null
+              child: UrlUtils.normalizeImageUrl(imageUrl) != null
                   ? ClipRRect(
                       borderRadius: const BorderRadius.vertical(top: Radius.circular(15)),
-                      child: Image.network(
-                        imageUrl!,
+                      child: CachedNetworkImage(
+                        imageUrl: UrlUtils.normalizeImageUrl(imageUrl)!,
                         fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) => const Icon(Icons.menu_book, size: 50, color: Colors.grey),
+                        placeholder: (context, url) => const SkeletonLoader(width: double.infinity, height: double.infinity, borderRadius: 0),
+                        errorWidget: (context, url, error) => const Icon(Icons.menu_book, size: 50, color: Colors.grey),
                       ),
                     )
                   : const Icon(Icons.menu_book, size: 50, color: Colors.grey),

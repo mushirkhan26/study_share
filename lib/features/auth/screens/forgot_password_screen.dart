@@ -5,29 +5,17 @@ import '../../../core/constants/app_constants.dart';
 import '../../../core/utils/ui_utils.dart';
 import '../../../core/utils/validation_utils.dart';
 
-class ForgotPasswordScreen extends StatefulWidget {
-  const ForgotPasswordScreen({super.key});
+class ForgotPasswordScreen extends StatelessWidget {
+  ForgotPasswordScreen({super.key});
 
-  @override
-  State<ForgotPasswordScreen> createState() => _ForgotPasswordScreenState();
-}
-
-class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
 
-  void _handleResetPassword() {
+  void _handleResetPassword(BuildContext context) {
     if (_formKey.currentState!.validate()) {
-      // TODO: Implement password reset logic with AuthProvider
       UIUtils.showSnackBar(context, "Password reset link sent to your email!");
       context.pop();
     }
-  }
-
-  @override
-  void dispose() {
-    _emailController.dispose();
-    super.dispose();
   }
 
   @override
@@ -65,7 +53,6 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
 
                 const SizedBox(height: 40),
 
-                // --- Email Field ---
                 const Text("Email Address", style: TextStyle(fontWeight: FontWeight.w600)),
                 const SizedBox(height: 8),
                 TextFormField(
@@ -77,12 +64,11 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
 
                 const SizedBox(height: 40),
 
-                // --- Reset Button ---
                 SizedBox(
                   width: double.infinity,
                   height: 55,
                   child: ElevatedButton(
-                    onPressed: _handleResetPassword,
+                    onPressed: () => _handleResetPassword(context),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.primary,
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),

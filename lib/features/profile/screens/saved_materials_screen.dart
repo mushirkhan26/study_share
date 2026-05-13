@@ -1,42 +1,24 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
 import '../../../config/navigation/app_routes.dart';
-import '../../../core/api/network/wishlist_service.dart';
+import '../../../core/providers/wishlist_provider.dart';
 import '../../../widgets/book_card.dart';
 
-class SavedMaterialsScreen extends StatefulWidget {
+class SavedMaterialsScreen extends StatelessWidget {
   const SavedMaterialsScreen({super.key});
 
   @override
-  State<SavedMaterialsScreen> createState() => _SavedMaterialsScreenState();
-}
-
-class _SavedMaterialsScreenState extends State<SavedMaterialsScreen> {
-  final WishlistService _wishlistService = WishlistService();
-  List<dynamic> _savedBooks = [];
-  bool _isLoading = true;
-
-  @override
-  void initState() {
-    super.initState();
-    _fetchSavedBooks();
-  }
-
-  Future<void> _fetchSavedBooks() async {
-    setState(() => _isLoading = true);
-    final response = await _wishlistService.getWishlist();
-    if (response.success && response.data != null) {
-      setState(() {
-        _savedBooks = response.data!;
-        _isLoading = false;
-      });
-    } else {
-      setState(() => _isLoading = false);
-    }
-  }
-
-  @override
   Widget build(BuildContext context) {
+    final wishlistProvider = Provider.of<WishlistProvider>(context);
+
+    // Initial fetch
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!wishlistProvider.hasFetched && !wishlistProvider.isLoading) {
+        wishlistProvider.fetchWishlist();
+      }
+    });
+
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
@@ -45,12 +27,12 @@ class _SavedMaterialsScreenState extends State<SavedMaterialsScreen> {
         elevation: 0,
         iconTheme: const IconThemeData(color: Colors.black),
       ),
-      body: _isLoading
+      body: wishlistProvider.isLoading && wishlistProvider.savedBooks.isEmpty
           ? const Center(child: CircularProgressIndicator())
-          : _savedBooks.isEmpty
-              ? _buildEmptyState()
+          : wishlistProvider.savedBooks.isEmpty
+              ? _buildEmptyState(context)
               : RefreshIndicator(
-                  onRefresh: _fetchSavedBooks,
+                  onRefresh: () => wishlistProvider.fetchWishlist(),
                   child: GridView.builder(
                     padding: const EdgeInsets.all(16),
                     gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
@@ -59,13 +41,13 @@ class _SavedMaterialsScreenState extends State<SavedMaterialsScreen> {
                       mainAxisSpacing: 15,
                       childAspectRatio: 0.65,
                     ),
-                    itemCount: _savedBooks.length,
+                    itemCount: wishlistProvider.savedBooks.length,
                     itemBuilder: (context, index) {
-                      final book = _savedBooks[index];
+                      final book = wishlistProvider.savedBooks[index];
                       return GestureDetector(
                         onTap: () async {
                           await context.push(AppRoutes.bookDetailRoute, extra: book);
-                          _fetchSavedBooks(); // Refresh if they removed from wishlist in detail screen
+                          wishlistProvider.fetchWishlist();
                         },
                         child: BookCard(
                           title: book['title'],
@@ -74,7 +56,7 @@ class _SavedMaterialsScreenState extends State<SavedMaterialsScreen> {
                           originalPrice: (book['originalPrice'] as num).toInt(),
                           condition: book['condition'],
                           tag: book['tag'] ?? "Book",
-                          imageUrl: (book['images'] as List).isNotEmpty ? book['images'][0] : null,
+                          imageUrl: (book['images'] != null && (book['images'] as List).isNotEmpty) ? book['images'][0] : null,
                         ),
                       );
                     },
@@ -83,7 +65,7 @@ class _SavedMaterialsScreenState extends State<SavedMaterialsScreen> {
     );
   }
 
-  Widget _buildEmptyState() {
+  Widget _buildEmptyState(BuildContext context) {
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,

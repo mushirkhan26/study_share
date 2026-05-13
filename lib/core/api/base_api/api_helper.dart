@@ -1,8 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
-
 import 'package:http/http.dart' as http;
-
 import '../../constants/app_constants.dart';
 import '../../errors/app_exception.dart';
 import '../../services/logger_service.dart';
@@ -11,17 +9,14 @@ import 'api_response.dart';
 
 class ApiHelper {
   static const String _defaultBaseUrl = AppConstants.apiBaseUrl;
-
-  static const String otherBaseUrl =
-      "https://hrms-socket.onrender.com/"; // Replace with your mail service base URL
+  
   final LoggingService _logger = LoggingService.instance;
   final SecureStorageService _secureStorage = SecureStorageService();
 
-  String _currentBaseUrl; // Global base URL for the current service
+  String _currentBaseUrl;
 
   ApiHelper({String? baseUrl}) : _currentBaseUrl = baseUrl ?? _defaultBaseUrl;
 
-  // Set the base URL for the current service
   void setBaseUrl(String baseUrl) {
     _currentBaseUrl = baseUrl;
   }
@@ -55,18 +50,58 @@ class ApiHelper {
   }
 
   Future<ApiResponse<T>> delete<T>(
-  String endpoint, {
-  dynamic body,
-  Map<String, String>? headers,
-}) async {
-  return _request<T>(
-    'DELETE',
-    endpoint,
-    body: body,
-    headers: headers,
-  );
-}
-  
+    String endpoint, {
+    dynamic body,
+    Map<String, String>? headers,
+  }) async {
+    return _request<T>('DELETE', endpoint, body: body, headers: headers);
+  }
+
+  Future<ApiResponse<T>> multipartRequest<T>(
+    String method,
+    String endpoint, {
+    Map<String, String>? fields,
+    Map<String, String>? files, // fieldName: filePath
+    Map<String, String>? headers,
+  }) async {
+    final url = Uri.parse('$_currentBaseUrl$endpoint');
+    final defaultHeaders = await _defaultHeaders(headers);
+    
+    _logger.logApi(
+      '=== MULTIPART REQUEST START ===\nMethod: $method\nURL: $url\nHeaders: ${_sanitizeHeaders(defaultHeaders)}\nFields: $fields\nFiles: $files',
+    );
+
+    try {
+      var request = http.MultipartRequest(method.toUpperCase(), url);
+      request.headers.addAll(defaultHeaders);
+      
+      if (fields != null) request.fields.addAll(fields);
+      
+      if (files != null) {
+        for (var entry in files.entries) {
+          request.files.add(await http.MultipartFile.fromPath(entry.key, entry.value));
+        }
+      }
+
+      var streamedResponse = await request.send();
+      var response = await http.Response.fromStream(streamedResponse);
+
+      _logger.logApi(
+        '=== RESPONSE ===\nStatus Code: ${response.statusCode}\nBody: ${_sanitizeResponseBody(response.body)}',
+      );
+
+      return _handleResponse<T>(response);
+    } on SocketException catch (e, s) {
+      _logger.error('NETWORK', 'No Internet Connection', error: e, stackTrace: s);
+      return ApiResponse.error('No Internet Connection');
+    } on AppException catch (e, s) {
+      _logger.error('API_EXCEPTION', e.message, error: e, stackTrace: s);
+      return ApiResponse.error(e.message);
+    } catch (e, s) {
+      _logger.error('UNEXPECTED', 'Unexpected error: $e', error: e, stackTrace: s);
+      return ApiResponse.error('Something went wrong. Please try again later.');
+    }
+  }
 
   Future<ApiResponse<T>> _request<T>(
     String method,
@@ -78,7 +113,6 @@ class ApiHelper {
     http.Response response;
     final sanitizedBody = body != null ? _sanitizeRequestBody(jsonEncode(body)) : null;
 
-    // Fetch dynamic headers (including Token)
     final defaultHeaders = await _defaultHeaders(headers);
     _logger.logApi(
       '=== REQUEST START ===\nMethod: $method\nURL: $url\nHeaders: ${_sanitizeHeaders(defaultHeaders)}\nBody: $sanitizedBody',
@@ -93,27 +127,26 @@ class ApiHelper {
           response = await http.post(
             url,
             headers: defaultHeaders,
-            body: jsonEncode(body),
+            body: body != null ? jsonEncode(body) : null,
           );
           break;
         case 'PUT':
-          response = await http.put(url, headers: defaultHeaders, body: jsonEncode(body));
+          response = await http.put(url, headers: defaultHeaders, body: body != null ? jsonEncode(body) : null);
           break;
         case 'PATCH':
           response = await http.patch(
             url,
             headers: defaultHeaders,
-            body: jsonEncode(body),
+            body: body != null ? jsonEncode(body) : null,
           );
           break;
         case 'DELETE':
-          response = await http.delete(url, headers: defaultHeaders, body: body != null ? jsonEncode(body) : null,);
+          response = await http.delete(url, headers: defaultHeaders, body: body != null ? jsonEncode(body) : null);
           break;
         default:
           throw BadRequestException('Invalid HTTP method');
       }
 
-      // Log error details from backend
       _logger.logApi(
         '=== RESPONSE ===\nStatus Code: ${response.statusCode}\nBody: ${_sanitizeResponseBody(response.body)}',
       );
@@ -179,46 +212,43 @@ class ApiHelper {
         return jsonEncode(sanitized);
       }
     } catch (_) {}
-    return body.length > 1000 ? '${body.substring(0, 1000)}...[TRUNCATED]' : body;
+    return body.length > 5000 ? '${body.substring(0, 5000)}...[TRUNCATED]' : body;
   }
 
   ApiResponse<T> _handleResponse<T>(http.Response response) {
-  final statusCode = response.statusCode;
-  dynamic body;
+    final statusCode = response.statusCode;
+    dynamic body;
 
-  try {
-    body = response.body.isNotEmpty ? jsonDecode(response.body) : null;
-  } catch (_) {
-    body = response.body;
-  }
+    try {
+      body = response.body.isNotEmpty ? jsonDecode(response.body) : null;
+    } catch (_) {
+      body = response.body;
+    }
 
-  // ✅ SUCCESS
-  if (statusCode >= 200 && statusCode < 300) {
-    return ApiResponse.success(body as T, statusCode: statusCode);
-  }
+    if (statusCode >= 200 && statusCode < 300) {
+      return ApiResponse.success(body as T, statusCode: statusCode);
+    }
 
-  // ✅ SAFE error message extraction
-  String message = 'Something went wrong';
+    String message = 'Something went wrong';
+    if (body is Map<String, dynamic>) {
+      message = body['message']?.toString() ?? message;
+    } else if (body is String) {
+      message = body;
+    }
 
-  if (body is Map<String, dynamic>) {
-    message = body['message']?.toString() ?? message;
-  } else if (body is String) {
-    message = body;
-  }
-
-  switch (statusCode) {
-    case 400:
-      throw BadRequestException(message);
-    case 401:
-      throw UnauthorizedException(message);
-    case 403:
-      throw ForbiddenException(message);
-    case 404:
-      throw NotFoundException(message);
-    case 500:
-      throw ServerException(message);
-    default:
-      throw FetchDataException('Error occurred with StatusCode: $statusCode');
-  }
+    switch (statusCode) {
+      case 400:
+        throw BadRequestException(message);
+      case 401:
+        throw UnauthorizedException(message);
+      case 403:
+        throw ForbiddenException(message);
+      case 404:
+        throw NotFoundException(message);
+      case 500:
+        throw ServerException(message);
+      default:
+        throw FetchDataException('Error occurred with StatusCode: $statusCode');
+    }
   }
 }

@@ -1,19 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../../config/theme/app_colors.dart';
+import '../../../core/providers/ui_provider.dart';
 
-class AppearanceScreen extends StatefulWidget {
+class AppearanceScreen extends StatelessWidget {
   const AppearanceScreen({super.key});
 
   @override
-  State<AppearanceScreen> createState() => _AppearanceScreenState();
-}
-
-class _AppearanceScreenState extends State<AppearanceScreen> {
-  // Current selected mode (Dummy state for now)
-  String _selectedTheme = 'System Default';
-
-  @override
   Widget build(BuildContext context) {
+    final uiProvider = Provider.of<UIProvider>(context);
+
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
@@ -29,19 +25,28 @@ class _AppearanceScreenState extends State<AppearanceScreen> {
           _buildSectionHeader("Theme Mode"),
           
           _buildThemeOption(
+            context: context,
             title: "Light Mode",
             icon: Icons.light_mode_outlined,
-            value: "Light Mode",
+            mode: ThemeMode.light,
+            currentMode: uiProvider.themeMode,
+            onTap: () => uiProvider.setThemeMode(ThemeMode.light),
           ),
           _buildThemeOption(
+            context: context,
             title: "Dark Mode",
             icon: Icons.dark_mode_outlined,
-            value: "Dark Mode",
+            mode: ThemeMode.dark,
+            currentMode: uiProvider.themeMode,
+            onTap: () => uiProvider.setThemeMode(ThemeMode.dark),
           ),
           _buildThemeOption(
+            context: context,
             title: "System Default",
             icon: Icons.settings_brightness_outlined,
-            value: "System Default",
+            mode: ThemeMode.system,
+            currentMode: uiProvider.themeMode,
+            onTap: () => uiProvider.setThemeMode(ThemeMode.system),
           ),
 
           const Padding(
@@ -76,8 +81,15 @@ class _AppearanceScreenState extends State<AppearanceScreen> {
     );
   }
 
-  Widget _buildThemeOption({required String title, required IconData icon, required String value}) {
-    final bool isSelected = _selectedTheme == value;
+  Widget _buildThemeOption({
+    required BuildContext context,
+    required String title,
+    required IconData icon,
+    required ThemeMode mode,
+    required ThemeMode currentMode,
+    required VoidCallback onTap,
+  }) {
+    final bool isSelected = mode == currentMode;
 
     return ListTile(
       contentPadding: const EdgeInsets.symmetric(horizontal: 20),
@@ -100,12 +112,7 @@ class _AppearanceScreenState extends State<AppearanceScreen> {
       trailing: isSelected 
           ? const Icon(Icons.check_circle, color: AppColors.primary, size: 24)
           : const Icon(Icons.circle_outlined, color: Colors.grey, size: 24),
-      onTap: () {
-        setState(() {
-          _selectedTheme = value;
-        });
-        // Future: Implement actual theme switching logic using a Provider or Bloc
-      },
+      onTap: onTap,
     );
   }
 }

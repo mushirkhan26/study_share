@@ -2,42 +2,25 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:url_launcher/url_launcher.dart';
-import '../../../core/api/network/material_service.dart';
+import 'package:provider/provider.dart';
+import '../../../core/providers/material_provider.dart';
 import '../../../widgets/note_card.dart';
+import '../../../widgets/skeleton_loaders.dart';
 
-class StudyMaterialsScreen extends StatefulWidget {
+class StudyMaterialsScreen extends StatelessWidget {
   const StudyMaterialsScreen({super.key});
 
   @override
-  State<StudyMaterialsScreen> createState() => _StudyMaterialsScreenState();
-}
-
-class _StudyMaterialsScreenState extends State<StudyMaterialsScreen> {
-  final MaterialService _materialService = MaterialService();
-  List<dynamic> _materials = [];
-  bool _isLoading = true;
-
-  @override
-  void initState() {
-    super.initState();
-    _fetchMaterials();
-  }
-
-  Future<void> _fetchMaterials() async {
-    setState(() => _isLoading = true);
-    final response = await _materialService.getMaterials();
-    if (response.success && response.data != null) {
-      setState(() {
-        _materials = response.data!;
-        _isLoading = false;
-      });
-    } else {
-      setState(() => _isLoading = false);
-    }
-  }
-
-  @override
   Widget build(BuildContext context) {
+    final materialProvider = Provider.of<MaterialProvider>(context);
+
+    // Initial fetch
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!materialProvider.hasFetched && !materialProvider.isLoading) {
+        materialProvider.fetchMaterials();
+      }
+    });
+
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
@@ -46,17 +29,21 @@ class _StudyMaterialsScreenState extends State<StudyMaterialsScreen> {
         elevation: 0,
         iconTheme: const IconThemeData(color: Colors.black),
       ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : _materials.isEmpty
+      body: materialProvider.isLoading && materialProvider.materials.isEmpty
+          ? ListView.builder(
+              padding: const EdgeInsets.all(20),
+              itemCount: 8,
+              itemBuilder: (context, index) => const NoteCardSkeleton(),
+            )
+          : materialProvider.materials.isEmpty
               ? _buildEmptyState()
               : RefreshIndicator(
-                  onRefresh: _fetchMaterials,
+                  onRefresh: () => materialProvider.fetchMaterials(),
                   child: ListView.builder(
                     padding: const EdgeInsets.all(20),
-                    itemCount: _materials.length,
+                    itemCount: materialProvider.materials.length,
                     itemBuilder: (context, index) {
-                      final item = _materials[index];
+                      final item = materialProvider.materials[index];
                       return NoteCard(
                         title: item['title'],
                         subject: item['subject'],
@@ -66,20 +53,12 @@ class _StudyMaterialsScreenState extends State<StudyMaterialsScreen> {
                           if (fileUrl != null && fileUrl.isNotEmpty) {
                             final Uri uri = Uri.parse(fileUrl);
                             try {
-                              // Try direct launch first as canLaunchUrl is flaky on some devices/emulators
-                              bool launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
-                              if (!launched && mounted) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(content: Text("Could not open file in external app")),
-                                );
-                              }
+                              await launchUrl(uri, mode: LaunchMode.externalApplication);
                             } catch (e) {
-                              print("Error launching URL: $e");
-                              // Fallback attempt
                               try {
                                 await launchUrl(uri, mode: LaunchMode.platformDefault);
                               } catch (e2) {
-                                if (mounted) {
+                                if (context.mounted) {
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     const SnackBar(content: Text("No app found to open this file")),
                                   );
@@ -93,135 +72,140 @@ class _StudyMaterialsScreenState extends State<StudyMaterialsScreen> {
                   ),
                 ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          _showUploadDialog();
-        },
+        onPressed: () => _showUploadDialog(context),
         backgroundColor: const Color(0xFF00BFA5),
         child: const Icon(Icons.add, color: Colors.white),
       ),
     );
   }
 
-  void _showUploadDialog() {
+  void _showUploadDialog(BuildContext context) {
     final titleController = TextEditingController();
     final subjectController = TextEditingController();
-    File? selectedFile;
-    String selectedType = 'PDF';
-    bool isUploading = false;
+    final ValueNotifier<File?> selectedFile = ValueNotifier<File?>(null);
+    final ValueNotifier<String> selectedType = ValueNotifier<String>('PDF');
 
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(25))),
-      builder: (context) => StatefulBuilder(
-        builder: (context, setModalState) => Padding(
-          padding: EdgeInsets.only(
-            bottom: MediaQuery.of(context).viewInsets.bottom,
-            left: 20,
-            right: 20,
-            top: 20,
-          ),
-          child: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text("Upload Study Material", style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-                const SizedBox(height: 20),
-                _buildModalTextField("Title", "e.g. Java Notes", titleController),
-                const SizedBox(height: 15),
-                _buildModalTextField("Subject", "e.g. Computer Science", subjectController),
-                const SizedBox(height: 15),
-                const Text("Type", style: TextStyle(fontWeight: FontWeight.bold)),
-                Row(
-                  children: [
-                    Radio<String>(
-                      value: 'PDF',
-                      groupValue: selectedType,
-                      onChanged: (v) => setModalState(() => selectedType = v!),
-                    ),
-                    const Text("PDF"),
-                    Radio<String>(
-                      value: 'Image',
-                      groupValue: selectedType,
-                      onChanged: (v) => setModalState(() => selectedType = v!),
-                    ),
-                    const Text("Image"),
-                  ],
-                ),
-                const SizedBox(height: 15),
-                GestureDetector(
-                  onTap: () async {
-                    FilePickerResult? result = await FilePicker.platform.pickFiles(
-                      type: FileType.custom,
-                      allowedExtensions: ['pdf', 'jpg', 'png', 'jpeg'],
-                    );
-                    if (result != null && result.files.single.path != null) {
-                      setModalState(() => selectedFile = File(result.files.single.path!));
-                      // Auto-detect type
-                      if (result.files.single.extension?.toLowerCase() == 'pdf') {
-                        setModalState(() => selectedType = 'PDF');
-                      } else {
-                        setModalState(() => selectedType = 'Image');
-                      }
+      builder: (context) => Padding(
+        padding: EdgeInsets.only(
+          bottom: MediaQuery.of(context).viewInsets.bottom,
+          left: 20,
+          right: 20,
+          top: 20,
+        ),
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text("Upload Study Material", style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+              const SizedBox(height: 20),
+              _buildModalTextField("Title", "e.g. Java Notes", titleController),
+              const SizedBox(height: 15),
+              _buildModalTextField("Subject", "e.g. Computer Science", subjectController),
+              const SizedBox(height: 15),
+              const Text("Type", style: TextStyle(fontWeight: FontWeight.bold)),
+              ValueListenableBuilder<String>(
+                valueListenable: selectedType,
+                builder: (context, type, child) {
+                  return Row(
+                    children: [
+                      Radio<String>(
+                        value: 'PDF',
+                        groupValue: type,
+                        onChanged: (v) => selectedType.value = v!,
+                      ),
+                      const Text("PDF"),
+                      Radio<String>(
+                        value: 'Image',
+                        groupValue: type,
+                        onChanged: (v) => selectedType.value = v!,
+                      ),
+                      const Text("Image"),
+                    ],
+                  );
+                }
+              ),
+              const SizedBox(height: 15),
+              GestureDetector(
+                onTap: () async {
+                  FilePickerResult? result = await FilePicker.platform.pickFiles(
+                    type: FileType.custom,
+                    allowedExtensions: ['pdf', 'jpg', 'png', 'jpeg'],
+                  );
+                  if (result != null && result.files.single.path != null) {
+                    selectedFile.value = File(result.files.single.path!);
+                    if (result.files.single.extension?.toLowerCase() == 'pdf') {
+                      selectedType.value = 'PDF';
+                    } else {
+                      selectedType.value = 'Image';
                     }
-                  },
-                  child: Container(
-                    height: 100,
-                    width: double.infinity,
-                    decoration: BoxDecoration(
-                      color: Colors.grey[100],
-                      borderRadius: BorderRadius.circular(15),
-                      border: Border.all(color: Colors.grey.shade300),
-                    ),
-                    child: selectedFile != null
-                        ? Center(child: Text("File Selected: ${selectedFile!.path.split('/').last}"))
-                        : const Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(Icons.upload_file, color: Color(0xFF00BFA5)),
-                              Text("Tap to select file (Image/PDF)", style: TextStyle(fontSize: 12)),
-                            ],
-                          ),
-                  ),
+                  }
+                },
+                child: ValueListenableBuilder<File?>(
+                  valueListenable: selectedFile,
+                  builder: (context, file, child) {
+                    return Container(
+                      height: 100,
+                      width: double.infinity,
+                      decoration: BoxDecoration(
+                        color: Colors.grey[100],
+                        borderRadius: BorderRadius.circular(15),
+                        border: Border.all(color: Colors.grey.shade300),
+                      ),
+                      child: file != null
+                          ? Center(child: Text("File Selected: ${file.path.split('/').last}"))
+                          : const Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(Icons.upload_file, color: Color(0xFF00BFA5)),
+                                Text("Tap to select file (Image/PDF)", style: TextStyle(fontSize: 12)),
+                              ],
+                            ),
+                    );
+                  }
                 ),
-                const SizedBox(height: 30),
-                SizedBox(
-                  width: double.infinity,
-                  height: 50,
-                  child: ElevatedButton(
-                    onPressed: isUploading ? null : () async {
-                      if (titleController.text.isEmpty || subjectController.text.isEmpty || selectedFile == null) {
-                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("All fields are required")));
-                        return;
-                      }
+              ),
+              const SizedBox(height: 30),
+              SizedBox(
+                width: double.infinity,
+                height: 50,
+                child: Consumer<MaterialProvider>(
+                  builder: (context, provider, child) {
+                    return ElevatedButton(
+                      onPressed: provider.isLoading ? null : () async {
+                        if (titleController.text.isEmpty || subjectController.text.isEmpty || selectedFile.value == null) {
+                          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("All fields are required")));
+                          return;
+                        }
 
-                      setModalState(() => isUploading = true);
-                      final res = await _materialService.uploadMaterial(
-                        title: titleController.text,
-                        subject: subjectController.text,
-                        type: selectedType,
-                        file: selectedFile!,
-                      );
-                      setModalState(() => isUploading = false);
+                        final success = await provider.uploadMaterial(
+                          title: titleController.text,
+                          subject: subjectController.text,
+                          type: selectedType.value,
+                          file: selectedFile.value!,
+                        );
 
-                      if (res.success) {
-                        Navigator.pop(context);
-                        _fetchMaterials();
-                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Material Uploaded!")));
-                      } else {
-                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(res.message ?? "Upload failed")));
-                      }
-                    },
-                    style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF00BFA5)),
-                    child: isUploading 
-                      ? const CircularProgressIndicator(color: Colors.white)
-                      : const Text("Upload Now", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                  ),
+                        if (success && context.mounted) {
+                          Navigator.pop(context);
+                          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Material Uploaded!")));
+                        } else if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Upload failed")));
+                        }
+                      },
+                      style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF00BFA5)),
+                      child: provider.isLoading 
+                        ? const CircularProgressIndicator(color: Colors.white)
+                        : const Text("Upload Now", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                    );
+                  }
                 ),
-                const SizedBox(height: 20),
-              ],
-            ),
+              ),
+              const SizedBox(height: 20),
+            ],
           ),
         ),
       ),

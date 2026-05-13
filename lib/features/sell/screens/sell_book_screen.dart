@@ -1,31 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:provider/provider.dart';
 import 'dart:io';
-import '../../../core/models/user_model.dart';
 import '../../../config/theme/app_colors.dart';
-import '../../../core/services/secure_storage_service.dart';
-import '../../../core/api/network/auth_service.dart';
-import '../../../core/api/network/book_service.dart';
+import '../../../core/providers/auth_provider.dart';
+import '../../../core/providers/book_provider.dart';
 import '../../../core/utils/ui_utils.dart';
 
-class SellBookScreen extends StatefulWidget {
-  const SellBookScreen({super.key});
+class SellBookScreen extends StatelessWidget {
+  SellBookScreen({super.key});
 
-  @override
-  State<SellBookScreen> createState() => _SellBookScreenState();
-}
-
-class _SellBookScreenState extends State<SellBookScreen> {
   final _formKey = GlobalKey<FormState>();
-  final SecureStorageService _storage = SecureStorageService();
-  final BookService _bookService = BookService();
-  final AuthService _authService = AuthService();
-  bool _isSubmitting = false;
-  bool _isLoadingRole = true;
-  UserModel? _currentUser;
-
-  // Image Picker
-  XFile? _imageFile;
+  final ValueNotifier<XFile?> _imageFile = ValueNotifier<XFile?>(null);
   final ImagePicker _picker = ImagePicker();
 
   // Form Controllers
@@ -36,36 +22,13 @@ class _SellBookScreenState extends State<SellBookScreen> {
   final _descriptionController = TextEditingController();
 
   // Dropdown Values
-  String _selectedCondition = 'Good';
-  String _selectedTag = 'BCA';
+  final ValueNotifier<String> _selectedCondition = ValueNotifier<String>('Good');
+  final ValueNotifier<String> _selectedTag = ValueNotifier<String>('BCA');
 
   final List<String> _conditions = ['Like New', 'Good', 'Old', 'Worn Out'];
   final List<String> _tags = ['BCA', 'B.Tech', 'B.Sc', 'BA', 'Novels', 'Other'];
 
-  @override
-  void initState() {
-    super.initState();
-    _loadUserRole();
-  }
-
-  Future<void> _loadUserRole() async {
-    final data = await _storage.getUserData();
-    if (data != null) {
-      setState(() {
-        _currentUser = UserModel(
-          id: data['userId'] ?? '',
-          username: data['username'] ?? 'User',
-          email: data['email'] ?? '',
-          role: UserRoleExtension.fromString(data['role'] ?? 'buyer'),
-        );
-        _isLoadingRole = false;
-      });
-    } else {
-      setState(() => _isLoadingRole = false);
-    }
-  }
-
-  Future<void> _pickImage() async {
+  Future<void> _pickImage(BuildContext context) async {
     showModalBottomSheet(
       context: context,
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
@@ -79,8 +42,8 @@ class _SellBookScreenState extends State<SellBookScreen> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
-                _buildSourceOption(Icons.camera_alt_rounded, "Camera", ImageSource.camera),
-                _buildSourceOption(Icons.photo_library_rounded, "Gallery", ImageSource.gallery),
+                _buildSourceOption(context, Icons.camera_alt_rounded, "Camera", ImageSource.camera),
+                _buildSourceOption(context, Icons.photo_library_rounded, "Gallery", ImageSource.gallery),
               ],
             ),
           ],
@@ -89,13 +52,13 @@ class _SellBookScreenState extends State<SellBookScreen> {
     );
   }
 
-  Widget _buildSourceOption(IconData icon, String label, ImageSource source) {
+  Widget _buildSourceOption(BuildContext context, IconData icon, String label, ImageSource source) {
     return GestureDetector(
       onTap: () async {
         Navigator.pop(context);
         final XFile? pickedFile = await _picker.pickImage(source: source, imageQuality: 50);
         if (pickedFile != null) {
-          setState(() => _imageFile = pickedFile);
+          _imageFile.value = pickedFile;
         }
       },
       child: Column(
@@ -112,72 +75,56 @@ class _SellBookScreenState extends State<SellBookScreen> {
     );
   }
 
-  void _submitAd() async {
-    print('Submit Ad button pressed');
-    if (_isSubmitting) {
-      print('Already submitting, ignoring press');
-      return;
-    }
+  void _submitAd(BuildContext context) async {
+    final bookProvider = Provider.of<BookProvider>(context, listen: false);
+    if (bookProvider.isLoading) return;
 
     if (_formKey.currentState!.validate()) {
-      print('Form validated successfully');
-      if (_imageFile == null) {
-        print('Image file is null');
+      if (_imageFile.value == null) {
         UIUtils.showSnackBar(context, "Please upload a picture of the book!", isError: true);
         return;
       }
 
-      setState(() => _isSubmitting = true);
-
-      final response = await _bookService.uploadBook(
+      final success = await bookProvider.uploadBook(
         title: _titleController.text.trim(),
         author: _authorController.text.trim(),
         sellingPrice: double.parse(_sellingPriceController.text),
         originalPrice: double.parse(_originalPriceController.text),
-        condition: _selectedCondition,
-        tag: _selectedTag,
+        condition: _selectedCondition.value,
+        tag: _selectedTag.value,
         description: _descriptionController.text.trim(),
-        imageFile: File(_imageFile!.path),
+        imageFile: File(_imageFile.value!.path),
       );
 
-      setState(() => _isSubmitting = false);
-
-      if (response.success) {
-        if (mounted) {
+      if (success) {
+        if (context.mounted) {
           UIUtils.showSnackBar(context, "Book Ad Posted Successfully!");
-          // Clear Form
           _titleController.clear();
           _authorController.clear();
           _sellingPriceController.clear();
           _originalPriceController.clear();
           _descriptionController.clear();
-          setState(() => _imageFile = null);
+          _imageFile.value = null;
         }
       } else {
-        if (mounted) {
-          UIUtils.showSnackBar(context, response.message ?? "Failed to post ad", isError: true);
+        if (context.mounted) {
+          UIUtils.showSnackBar(context, "Failed to post ad", isError: true);
         }
       }
     }
   }
 
   @override
-  void dispose() {
-    _titleController.dispose();
-    _authorController.dispose();
-    _sellingPriceController.dispose();
-    _originalPriceController.dispose();
-    _descriptionController.dispose();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
-    if (_isLoadingRole) {
+    final authProvider = Provider.of<AuthProvider>(context);
+    final bookProvider = Provider.of<BookProvider>(context);
+    final user = authProvider.user;
+
+    if (authProvider.isLoading && user == null) {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
-    if (_currentUser == null || _currentUser!.isBuyer) {
+    if (user == null || user.isBuyer) {
       return Scaffold(
         backgroundColor: Colors.white,
         appBar: AppBar(
@@ -209,7 +156,6 @@ class _SellBookScreenState extends State<SellBookScreen> {
                   height: 55,
                   child: ElevatedButton(
                     onPressed: () async {
-                      // Show confirmation dialog or update role directly
                       final confirmed = await showDialog<bool>(
                         context: context,
                         builder: (context) => AlertDialog(
@@ -222,16 +168,12 @@ class _SellBookScreenState extends State<SellBookScreen> {
                         ),
                       );
 
-                      if (confirmed == true && mounted) {
-                        setState(() => _isLoadingRole = true);
-                        final response = await _authService.updateProfile(role: 'seller');
-                        
-                        if (response.success) {
-                          await _loadUserRole();
-                          if (mounted) UIUtils.showSnackBar(context, "Account upgraded to Seller!");
-                        } else {
-                          setState(() => _isLoadingRole = false);
-                          if (mounted) UIUtils.showSnackBar(context, response.message ?? "Failed to upgrade", isError: true);
+                      if (confirmed == true && context.mounted) {
+                        final success = await authProvider.updateProfile(role: 'seller');
+                        if (success && context.mounted) {
+                           UIUtils.showSnackBar(context, "Account upgraded to Seller!");
+                        } else if (context.mounted) {
+                           UIUtils.showSnackBar(context, "Failed to upgrade", isError: true);
                         }
                       }
                     },
@@ -239,7 +181,9 @@ class _SellBookScreenState extends State<SellBookScreen> {
                       backgroundColor: AppColors.primary,
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                     ),
-                    child: const Text("Switch to Seller Profile", style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
+                    child: authProvider.isLoading 
+                      ? const CircularProgressIndicator(color: Colors.white)
+                      : const Text("Switch to Seller Profile", style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
                   ),
                 ),
               ],
@@ -267,30 +211,35 @@ class _SellBookScreenState extends State<SellBookScreen> {
               // 📸 Photo Upload Box
               const Text("Book Photo *", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
               const SizedBox(height: 10),
-              GestureDetector(
-                onTap: _pickImage,
-                child: Container(
-                  height: 150,
-                  width: double.infinity,
-                  decoration: BoxDecoration(
-                    color: Colors.grey[100],
-                    borderRadius: BorderRadius.circular(15),
-                    border: Border.all(color: const Color(0xFF00BFA5), style: BorderStyle.solid, width: 1.5),
-                  ),
-                  child: _imageFile != null
-                      ? ClipRRect(
-                    borderRadius: BorderRadius.circular(15),
-                    child: Image.file(File(_imageFile!.path), fit: BoxFit.cover),
-                  )
-                      : const Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.add_a_photo_outlined, size: 40, color: Color(0xFF00BFA5)),
-                      SizedBox(height: 8),
-                      Text("Tap to add cover photo", style: TextStyle(color: Colors.grey)),
-                    ],
-                  ),
-                ),
+              ValueListenableBuilder<XFile?>(
+                valueListenable: _imageFile,
+                builder: (context, file, child) {
+                  return GestureDetector(
+                    onTap: () => _pickImage(context),
+                    child: Container(
+                      height: 150,
+                      width: double.infinity,
+                      decoration: BoxDecoration(
+                        color: Colors.grey[100],
+                        borderRadius: BorderRadius.circular(15),
+                        border: Border.all(color: const Color(0xFF00BFA5), style: BorderStyle.solid, width: 1.5),
+                      ),
+                      child: file != null
+                          ? ClipRRect(
+                        borderRadius: BorderRadius.circular(15),
+                        child: Image.file(File(file.path), fit: BoxFit.cover),
+                      )
+                          : const Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.add_a_photo_outlined, size: 40, color: Color(0xFF00BFA5)),
+                          SizedBox(height: 8),
+                          Text("Tap to add cover photo", style: TextStyle(color: Colors.grey)),
+                        ],
+                      ),
+                    ),
+                  );
+                }
               ),
 
               const SizedBox(height: 25),
@@ -304,7 +253,6 @@ class _SellBookScreenState extends State<SellBookScreen> {
 
               const SizedBox(height: 25),
 
-              // 💰 Prices (Row mein taaki jagah bache)
               Row(
                 children: [
                   Expanded(
@@ -319,26 +267,34 @@ class _SellBookScreenState extends State<SellBookScreen> {
 
               const SizedBox(height: 25),
 
-              // 🏷️ Condition & Tag Dropdowns
               Row(
                 children: [
                   Expanded(
-                    child: _buildDropdown("Condition", _selectedCondition, _conditions, (val) {
-                      setState(() => _selectedCondition = val!);
-                    }),
+                    child: ValueListenableBuilder<String>(
+                      valueListenable: _selectedCondition,
+                      builder: (context, value, child) {
+                        return _buildDropdown("Condition", value, _conditions, (val) {
+                          _selectedCondition.value = val!;
+                        });
+                      }
+                    ),
                   ),
                   const SizedBox(width: 15),
                   Expanded(
-                    child: _buildDropdown("Course/Tag", _selectedTag, _tags, (val) {
-                      setState(() => _selectedTag = val!);
-                    }),
+                    child: ValueListenableBuilder<String>(
+                      valueListenable: _selectedTag,
+                      builder: (context, value, child) {
+                        return _buildDropdown("Course/Tag", value, _tags, (val) {
+                          _selectedTag.value = val!;
+                        });
+                      }
+                    ),
                   ),
                 ],
               ),
 
               const SizedBox(height: 25),
 
-              // 📖 Description
               const Text("Description", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
               const SizedBox(height: 10),
               _buildTextField(
@@ -351,23 +307,22 @@ class _SellBookScreenState extends State<SellBookScreen> {
 
               const SizedBox(height: 40),
 
-              // 🚀 Submit Button
               SizedBox(
                 width: double.infinity,
                 height: 55,
                 child: ElevatedButton(
-                  onPressed: _isSubmitting ? null : _submitAd,
+                  onPressed: bookProvider.isLoading ? null : () => _submitAd(context),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF00BFA5),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                     elevation: 0,
                   ),
-                  child: _isSubmitting 
+                  child: bookProvider.isLoading 
                     ? const CircularProgressIndicator(color: Colors.white)
                     : const Text("Post Ad", style: TextStyle(fontSize: 18, color: Colors.white, fontWeight: FontWeight.bold)),
                 ),
               ),
-              const SizedBox(height: 80), // Bottom nav bar space
+              const SizedBox(height: 80), 
             ],
           ),
         ),
@@ -375,7 +330,6 @@ class _SellBookScreenState extends State<SellBookScreen> {
     );
   }
 
-  // Helper Widget: TextField
   Widget _buildTextField(String label, String hint, TextEditingController controller, IconData icon, {bool isNumber = false, int maxLines = 1}) {
     return TextFormField(
       controller: controller,
@@ -393,7 +347,6 @@ class _SellBookScreenState extends State<SellBookScreen> {
     );
   }
 
-  // Helper Widget: Dropdown
   Widget _buildDropdown(String label, String currentValue, List<String> items, Function(String?) onChanged) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,

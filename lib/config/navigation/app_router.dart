@@ -1,4 +1,3 @@
-import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 // Aapki saari screens import karein
@@ -40,15 +39,15 @@ final GoRouter appRouter = GoRouter(
     ),
     GoRoute(
       path: AppRoutes.loginRoute,
-      builder: (context, state) => const LoginScreen(),
+      builder: (context, state) => LoginScreen(),
     ),
     GoRoute(
       path: AppRoutes.signupRoute,
-      builder: (context, state) => const SignupScreen(),
+      builder: (context, state) => SignupScreen(),
     ),
     GoRoute(
       path: AppRoutes.forgotPassword,
-      builder: (context, state) => const ForgotPasswordScreen(),
+      builder: (context, state) => ForgotPasswordScreen(),
     ),
 
     // ================= MAIN TABS (With Persistent Bottom Navigation Bar) =================
@@ -57,19 +56,19 @@ final GoRouter appRouter = GoRouter(
       routes: [
         GoRoute(
           path: AppRoutes.homeRoute,
-          pageBuilder: (context, state) => const NoTransitionPage(
+          pageBuilder: (context, state) => NoTransitionPage(
             child: HomeScreen(),
           ),
         ),
         GoRoute(
           path: AppRoutes.searchRoute,
-          pageBuilder: (context, state) => const NoTransitionPage(
+          pageBuilder: (context, state) =>  NoTransitionPage(
             child: SearchScreen(),
           ),
         ),
         GoRoute(
           path: AppRoutes.sellRoute,
-          pageBuilder: (context, state) => const NoTransitionPage(
+          pageBuilder: (context, state) =>  NoTransitionPage(
             child: SellBookScreen(),
           ),
         ),
@@ -119,7 +118,7 @@ final GoRouter appRouter = GoRouter(
     ),
     GoRoute(
       path: AppRoutes.editProfile,
-      builder: (context, state) => const EditProfileScreen(),
+      builder: (context, state) => EditProfileScreen(),
     ),
     GoRoute(
       path: AppRoutes.notifications,

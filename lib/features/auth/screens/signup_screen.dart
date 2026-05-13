@@ -1,87 +1,56 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
 import '../../../config/navigation/app_routes.dart';
 import '../../../config/theme/app_colors.dart';
-import '../../../core/api/network/auth_service.dart';
 import '../../../core/models/user_model.dart';
 import '../../../core/utils/ui_utils.dart';
 import '../../../core/utils/validation_utils.dart';
+import '../../../core/providers/auth_provider.dart';
 
-class SignupScreen extends StatefulWidget {
-  const SignupScreen({super.key});
+class SignupScreen extends StatelessWidget {
+  SignupScreen({super.key});
 
-  @override
-  State<SignupScreen> createState() => _SignupScreenState();
-}
-
-class _SignupScreenState extends State<SignupScreen> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
   final _collegeController = TextEditingController();
   final _passwordController = TextEditingController();
-  final AuthService _authService = AuthService();
 
-  UserRole _selectedRole = UserRole.buyer;
-  bool _isPasswordVisible = false;
-  bool _isLoading = false;
+  final ValueNotifier<UserRole> _selectedRole = ValueNotifier<UserRole>(UserRole.buyer);
+  final ValueNotifier<bool> _isPasswordVisible = ValueNotifier<bool>(false);
 
-  Future<void> _handleSignup() async {
+  Future<void> _handleSignup(BuildContext context) async {
     if (_formKey.currentState!.validate()) {
-      setState(() => _isLoading = true);
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
 
-      final response = await _authService.signup(
+      final success = await authProvider.signup(
         username: _nameController.text.trim(),
         email: _emailController.text.trim(),
         password: _passwordController.text,
         college: _collegeController.text.trim(),
-        role: _selectedRole,
+        role: _selectedRole.value,
       );
 
-      setState(() => _isLoading = false);
-
-      if (response.success) {
-        if (mounted) {
+      if (success) {
+        if (context.mounted) {
           UIUtils.showSnackBar(context, "Account Created Successfully!");
           context.go(AppRoutes.homeRoute);
         }
       } else {
-        if (mounted) {
-          UIUtils.showSnackBar(context, response.message ?? "Signup failed", isError: true);
+        if (context.mounted) {
+          UIUtils.showSnackBar(context, "Signup failed", isError: true);
         }
       }
     }
   }
 
   @override
-  void dispose() {
-    _nameController.dispose();
-    _emailController.dispose();
-    _collegeController.dispose();
-    _passwordController.dispose();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
+    final authProvider = Provider.of<AuthProvider>(context);
+
     return Scaffold(
       backgroundColor: Colors.white,
-      // appBar: AppBar(
-      //   leading: IconButton(
-      //     icon: const Icon(Icons.arrow_back_ios_new, size: 20),
-      //     onPressed: () => context.pop(),
-      //   ),
-      //   title: const Text("Create Account"),
-      //   backgroundColor: Colors.white,
-      //   elevation: 0, // Modern flat look
-      //   actions: [
-      //     IconButton(
-      //       onPressed: () {
-      //       },
-      //       icon: const Icon(Icons.info_outline, size: 22),
-      //     ),
-      //   ],
-      // ),
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 24.0),
@@ -130,44 +99,54 @@ class _SignupScreenState extends State<SignupScreen> {
 
                 // --- Role Selection ---
                 _buildFieldLabel("I want to"),
-                Row(
-                  children: [
-                    Expanded(
-                      child: _buildRoleCard(
-                        title: "Buy Books",
-                        icon: Icons.shopping_bag_outlined,
-                        role: UserRole.buyer,
-                        isSelected: _selectedRole == UserRole.buyer,
-                        onTap: () => setState(() => _selectedRole = UserRole.buyer),
-                      ),
-                    ),
-                    const SizedBox(width: 15),
-                    Expanded(
-                      child: _buildRoleCard(
-                        title: "Sell Books",
-                        icon: Icons.sell_outlined,
-                        role: UserRole.seller,
-                        isSelected: _selectedRole == UserRole.seller,
-                        onTap: () => setState(() => _selectedRole = UserRole.seller),
-                      ),
-                    ),
-                  ],
+                ValueListenableBuilder<UserRole>(
+                  valueListenable: _selectedRole,
+                  builder: (context, role, child) {
+                    return Row(
+                      children: [
+                        Expanded(
+                          child: _buildRoleCard(
+                            title: "Buy Books",
+                            icon: Icons.shopping_bag_outlined,
+                            role: UserRole.buyer,
+                            isSelected: role == UserRole.buyer,
+                            onTap: () => _selectedRole.value = UserRole.buyer,
+                          ),
+                        ),
+                        const SizedBox(width: 15),
+                        Expanded(
+                          child: _buildRoleCard(
+                            title: "Sell Books",
+                            icon: Icons.sell_outlined,
+                            role: UserRole.seller,
+                            isSelected: role == UserRole.seller,
+                            onTap: () => _selectedRole.value = UserRole.seller,
+                          ),
+                        ),
+                      ],
+                    );
+                  }
                 ),
 
                 const SizedBox(height: 20),
 
                 // --- Password ---
                 _buildFieldLabel("Password"),
-                TextFormField(
-                  controller: _passwordController,
-                  obscureText: !_isPasswordVisible,
-                  decoration: _inputDecoration("Create password", Icons.lock_outline).copyWith(
-                    suffixIcon: IconButton(
-                      icon: Icon(_isPasswordVisible ? Icons.visibility : Icons.visibility_off),
-                      onPressed: () => setState(() => _isPasswordVisible = !_isPasswordVisible),
-                    ),
-                  ),
-                  validator: ValidationUtils.validatePassword,
+                ValueListenableBuilder<bool>(
+                  valueListenable: _isPasswordVisible,
+                  builder: (context, visible, child) {
+                    return TextFormField(
+                      controller: _passwordController,
+                      obscureText: !visible,
+                      decoration: _inputDecoration("Create password", Icons.lock_outline).copyWith(
+                        suffixIcon: IconButton(
+                          icon: Icon(visible ? Icons.visibility : Icons.visibility_off),
+                          onPressed: () => _isPasswordVisible.value = !visible,
+                        ),
+                      ),
+                      validator: ValidationUtils.validatePassword,
+                    );
+                  }
                 ),
 
                 const SizedBox(height: 40),
@@ -177,13 +156,13 @@ class _SignupScreenState extends State<SignupScreen> {
                   width: double.infinity,
                   height: 55,
                   child: ElevatedButton(
-                    onPressed: _isLoading ? null : _handleSignup,
+                    onPressed: authProvider.isLoading ? null : () => _handleSignup(context),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.primary,
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                       elevation: 0,
                     ),
-                    child: _isLoading 
+                    child: authProvider.isLoading 
                       ? const CircularProgressIndicator(color: Colors.white)
                       : const Text("Sign Up", style: TextStyle(fontSize: 18, color: Colors.white, fontWeight: FontWeight.bold)),
                   ),

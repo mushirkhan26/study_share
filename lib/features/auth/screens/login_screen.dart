@@ -1,61 +1,47 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
 import '../../../config/navigation/app_routes.dart';
 import '../../../config/theme/app_colors.dart';
-import '../../../core/api/network/auth_service.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/utils/ui_utils.dart';
 import '../../../core/utils/validation_utils.dart';
+import '../../../core/providers/auth_provider.dart';
 
-class LoginScreen extends StatefulWidget {
-  const LoginScreen({super.key});
+class LoginScreen extends StatelessWidget {
+  LoginScreen({super.key});
 
-  @override
-  State<LoginScreen> createState() => _LoginScreenState();
-}
-
-class _LoginScreenState extends State<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
-  final AuthService _authService = AuthService();
 
-  bool _isPasswordVisible = false;
-  bool _isLoading = false;
-
-  Future<void> _handleLogin() async {
+  Future<void> _handleLogin(BuildContext context) async {
     if (_formKey.currentState!.validate()) {
-      setState(() => _isLoading = true);
-
-      final response = await _authService.login(
-        email: _emailController.text.trim(),
-        password: _passwordController.text,
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      
+      final success = await authProvider.login(
+        _emailController.text.trim(),
+        _passwordController.text,
       );
 
-      setState(() => _isLoading = false);
-
-      if (response.success) {
-        if (mounted) {
+      if (success) {
+        if (context.mounted) {
           UIUtils.showSnackBar(context, "Login Successful!");
           context.go(AppRoutes.homeRoute);
         }
       } else {
-        if (mounted) {
-          UIUtils.showSnackBar(context, response.message ?? "Login failed", isError: true);
+        if (context.mounted) {
+          UIUtils.showSnackBar(context, "Login failed", isError: true);
         }
       }
     }
   }
 
   @override
-  void dispose() {
-    _emailController.dispose();
-    _passwordController.dispose();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
+    final authProvider = Provider.of<AuthProvider>(context);
+    final isPasswordVisible = ValueNotifier<bool>(false);
+
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
@@ -95,16 +81,21 @@ class _LoginScreenState extends State<LoginScreen> {
 
                 const Text("Password", style: TextStyle(fontWeight: FontWeight.w600)),
                 const SizedBox(height: 8),
-                TextFormField(
-                  controller: _passwordController,
-                  obscureText: !_isPasswordVisible,
-                  decoration: _inputDecoration("Enter password", Icons.lock_outline).copyWith(
-                    suffixIcon: IconButton(
-                      icon: Icon(_isPasswordVisible ? Icons.visibility : Icons.visibility_off),
-                      onPressed: () => setState(() => _isPasswordVisible = !_isPasswordVisible),
-                    ),
-                  ),
-                  validator: (value) => ValidationUtils.validatePassword(value),
+                ValueListenableBuilder<bool>(
+                  valueListenable: isPasswordVisible,
+                  builder: (context, visible, child) {
+                    return TextFormField(
+                      controller: _passwordController,
+                      obscureText: !visible,
+                      decoration: _inputDecoration("Enter password", Icons.lock_outline).copyWith(
+                        suffixIcon: IconButton(
+                          icon: Icon(visible ? Icons.visibility : Icons.visibility_off),
+                          onPressed: () => isPasswordVisible.value = !visible,
+                        ),
+                      ),
+                      validator: (value) => ValidationUtils.validatePassword(value),
+                    );
+                  }
                 ),
 
                 Align(
@@ -121,13 +112,13 @@ class _LoginScreenState extends State<LoginScreen> {
                   width: double.infinity,
                   height: 55,
                   child: ElevatedButton(
-                    onPressed: _isLoading ? null : _handleLogin,
+                    onPressed: authProvider.isLoading ? null : () => _handleLogin(context),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.primary,
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                       elevation: 0,
                     ),
-                    child: _isLoading 
+                    child: authProvider.isLoading
                       ? const CircularProgressIndicator(color: Colors.white)
                       : const Text("Login", style: TextStyle(fontSize: 18, color: Colors.white, fontWeight: FontWeight.bold)),
                   ),

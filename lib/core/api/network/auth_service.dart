@@ -120,47 +120,42 @@ class AuthService {
     String? role,
     File? profileImage,
   }) async {
-    try {
-      final token = await _storage.getToken();
-      var request = http.MultipartRequest('PUT', Uri.parse('${AppConstants.apiBaseUrl}auth/profile'));
-      
-      request.headers.addAll({
-        'Authorization': 'Bearer $token',
-      });
+    final Map<String, String> fields = {};
+    if (username != null) fields['username'] = username;
+    if (college != null) fields['college'] = college;
+    if (role != null) fields['role'] = role;
 
-      if (username != null) request.fields['username'] = username;
-      if (college != null) request.fields['college'] = college;
-      if (role != null) request.fields['role'] = role;
-      
-      if (profileImage != null) {
-        request.files.add(await http.MultipartFile.fromPath('profileImage', profileImage.path));
-      }
-
-      var streamedResponse = await request.send();
-      var response = await http.Response.fromStream(streamedResponse);
-
-      if (response.statusCode == 200) {
-        final userData = jsonDecode(response.body);
-        final user = UserModel.fromJson(userData);
-        
-        // Sync local storage
-        await _storage.saveUserData(
-          token: token!,
-          userId: user.id,
-          username: user.username,
-          email: user.email,
-          role: user.role.name,
-          profileImage: user.profileImage,
-          college: user.college,
-        );
-        
-        return ApiResponse.success(user);
-      } else {
-        final error = jsonDecode(response.body);
-        return ApiResponse.error(error['message'] ?? 'Failed to update profile');
-      }
-    } catch (e) {
-      return ApiResponse.error('Network Error: $e');
+    final Map<String, String> files = {};
+    if (profileImage != null) {
+      files['profileImage'] = profileImage.path;
     }
+
+    final response = await _apiHelper.multipartRequest<Map<String, dynamic>>(
+      'PUT',
+      'auth/profile',
+      fields: fields,
+      files: files,
+    );
+
+    if (response.success && response.data != null) {
+      final userData = response.data!;
+      final user = UserModel.fromJson(userData);
+      
+      final token = await _storage.getToken();
+      
+      // Sync local storage
+      await _storage.saveUserData(
+        token: token!,
+        userId: user.id,
+        username: user.username,
+        email: user.email,
+        role: user.role.name,
+        profileImage: user.profileImage,
+        college: user.college,
+      );
+      
+      return ApiResponse.success(user);
+    }
+    return ApiResponse.error(response.message ?? 'Failed to update profile');
   }
 }

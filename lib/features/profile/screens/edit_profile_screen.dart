@@ -2,98 +2,62 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:provider/provider.dart';
 import '../../../config/theme/app_colors.dart';
-import '../../../core/api/network/auth_service.dart';
-import '../../../core/services/secure_storage_service.dart';
+import '../../../core/providers/auth_provider.dart';
 import '../../../core/utils/ui_utils.dart';
 
-class EditProfileScreen extends StatefulWidget {
-  const EditProfileScreen({super.key});
+class EditProfileScreen extends StatelessWidget {
+  EditProfileScreen({super.key});
 
-  @override
-  State<EditProfileScreen> createState() => _EditProfileScreenState();
-}
-
-class _EditProfileScreenState extends State<EditProfileScreen> {
   final _formKey = GlobalKey<FormState>();
-  final AuthService _authService = AuthService();
-  final SecureStorageService _storage = SecureStorageService();
   final ImagePicker _picker = ImagePicker();
   
   final _nameController = TextEditingController();
   final _collegeController = TextEditingController();
   
-  File? _imageFile;
-  String? _networkImageUrl;
-  bool _isLoading = true;
-  bool _isSaving = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _loadInitialData();
-  }
-
-  Future<void> _loadInitialData() async {
-    final data = await _storage.getUserData();
-    if (data != null) {
-      setState(() {
-        _nameController.text = data['username'] ?? '';
-        _collegeController.text = data['college'] ?? '';
-        _networkImageUrl = data['profileImage'];
-        _isLoading = false;
-      });
-    } else {
-      setState(() => _isLoading = false);
-    }
-  }
+  final ValueNotifier<File?> _imageFile = ValueNotifier<File?>(null);
 
   Future<void> _pickImage() async {
     final XFile? pickedFile = await _picker.pickImage(source: ImageSource.gallery, imageQuality: 50);
     if (pickedFile != null) {
-      setState(() => _imageFile = File(pickedFile.path));
+      _imageFile.value = File(pickedFile.path);
     }
   }
 
-  void _saveProfile() async {
+  void _saveProfile(BuildContext context) async {
     if (_formKey.currentState!.validate()) {
-      setState(() => _isSaving = true);
-      
-      final data = await _storage.getUserData();
-      final currentRole = data?['role'];
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
 
-      final response = await _authService.updateProfile(
+      final success = await authProvider.updateProfile(
         username: _nameController.text.trim(),
         college: _collegeController.text.trim(),
-        role: currentRole,
-        profileImage: _imageFile,
+        profileImage: _imageFile.value,
       );
 
-      setState(() => _isSaving = false);
-
-      if (response.success) {
-        if (mounted) {
+      if (success) {
+        if (context.mounted) {
           UIUtils.showSnackBar(context, "Profile Updated Successfully!");
           context.pop();
         }
       } else {
-        if (mounted) {
-          UIUtils.showSnackBar(context, response.message ?? "Update failed", isError: true);
+        if (context.mounted) {
+          UIUtils.showSnackBar(context, "Update failed", isError: true);
         }
       }
     }
   }
 
   @override
-  void dispose() {
-    _nameController.dispose();
-    _collegeController.dispose();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
-    if (_isLoading) {
+    final authProvider = Provider.of<AuthProvider>(context);
+    final user = authProvider.user;
+
+    // Initialize controllers with current user data
+    _nameController.text = user?.username ?? '';
+    _collegeController.text = user?.college ?? '';
+
+    if (authProvider.isLoading && user == null) {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
@@ -111,19 +75,23 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           key: _formKey,
           child: Column(
             children: [
-              // --- Profile Picture Section ---
               Center(
                 child: Stack(
                   children: [
-                    CircleAvatar(
-                      radius: 50,
-                      backgroundColor: AppColors.primary.withValues(alpha: 0.1),
-                      backgroundImage: _imageFile != null 
-                          ? FileImage(_imageFile!) 
-                          : (_networkImageUrl != null ? NetworkImage(_networkImageUrl!) as ImageProvider : null),
-                      child: (_imageFile == null && _networkImageUrl == null)
-                          ? const Icon(Icons.person, size: 50, color: AppColors.primary)
-                          : null,
+                    ValueListenableBuilder<File?>(
+                      valueListenable: _imageFile,
+                      builder: (context, file, child) {
+                        return CircleAvatar(
+                          radius: 50,
+                          backgroundColor: AppColors.primary.withValues(alpha: 0.1),
+                          backgroundImage: file != null 
+                              ? FileImage(file) 
+                              : (user?.profileImage != null ? NetworkImage(user!.profileImage!) as ImageProvider : null),
+                          child: (file == null && user?.profileImage == null)
+                              ? const Icon(Icons.person, size: 50, color: AppColors.primary)
+                              : null,
+                        );
+                      }
                     ),
                     Positioned(
                       bottom: 0,
@@ -142,25 +110,23 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
               ),
               const SizedBox(height: 30),
 
-              // --- Input Fields ---
               _buildEditField("Full Name", _nameController, Icons.person_outline),
               const SizedBox(height: 20),
               _buildEditField("College/University", _collegeController, Icons.school_outlined),
 
               const SizedBox(height: 40),
 
-              // --- Save Button ---
               SizedBox(
                 width: double.infinity,
                 height: 55,
                 child: ElevatedButton(
-                  onPressed: _isSaving ? null : _saveProfile,
+                  onPressed: authProvider.isLoading ? null : () => _saveProfile(context),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primary,
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                     elevation: 0,
                   ),
-                  child: _isSaving 
+                  child: authProvider.isLoading 
                     ? const CircularProgressIndicator(color: Colors.white)
                     : const Text(
                         "Save Changes",

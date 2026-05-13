@@ -1,68 +1,30 @@
-import 'dart:convert';
-import 'package:http/http.dart' as http;
-import '../../constants/app_constants.dart';
-import '../../services/secure_storage_service.dart';
+import '../base_api/api_helper.dart';
 import '../base_api/api_response.dart';
 
 class WishlistService {
-  final SecureStorageService _storage = SecureStorageService();
-  static const String baseUrl = "${AppConstants.apiBaseUrl}wishlist";
+  final ApiHelper _apiHelper = ApiHelper();
 
   Future<ApiResponse<Map<String, dynamic>>> toggleWishlist(String bookId) async {
-    try {
-      final token = await _storage.getToken();
-      final response = await http.post(
-        Uri.parse('$baseUrl/$bookId'),
-        headers: {
-          'Authorization': 'Bearer $token',
-          'Content-Type': 'application/json',
-        },
-      );
-
-      if (response.statusCode == 200 || response.statusCode == 201) {
-        return ApiResponse.success(jsonDecode(response.body));
-      } else {
-        return ApiResponse.error('Failed to update wishlist');
-      }
-    } catch (e) {
-      return ApiResponse.error('Network Error: $e');
+    final response = await _apiHelper.post<Map<String, dynamic>>('wishlist/$bookId', {});
+    if (response.success && response.data != null) {
+      return ApiResponse.success(response.data!);
     }
+    return ApiResponse.error(response.message ?? 'Failed to update wishlist');
   }
 
   Future<ApiResponse<List<dynamic>>> getWishlist() async {
-    try {
-      final token = await _storage.getToken();
-      final response = await http.get(
-        Uri.parse(baseUrl),
-        headers: {'Authorization': 'Bearer $token'},
-      );
-
-      if (response.statusCode == 200) {
-        return ApiResponse.success(jsonDecode(response.body));
-      } else {
-        return ApiResponse.error('Failed to fetch wishlist');
-      }
-    } catch (e) {
-      return ApiResponse.error('Network Error: $e');
+    final response = await _apiHelper.get<List<dynamic>>('wishlist');
+    if (response.success && response.data != null) {
+      return ApiResponse.success(response.data!);
     }
+    return ApiResponse.error(response.message ?? 'Failed to fetch wishlist');
   }
 
   Future<ApiResponse<bool>> checkIfSaved(String bookId) async {
-    try {
-      final token = await _storage.getToken();
-      final response = await http.get(
-        Uri.parse('$baseUrl/check/$bookId'),
-        headers: {'Authorization': 'Bearer $token'},
-      );
-
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        return ApiResponse.success(data['isSaved'] ?? false);
-      } else {
-        return ApiResponse.error('Failed to check status');
-      }
-    } catch (e) {
-      return ApiResponse.error('Network Error: $e');
+    final response = await _apiHelper.get<Map<String, dynamic>>('wishlist/check/$bookId');
+    if (response.success && response.data != null) {
+      return ApiResponse.success(response.data!['isSaved'] ?? false);
     }
+    return ApiResponse.error(response.message ?? 'Failed to check status');
   }
 }

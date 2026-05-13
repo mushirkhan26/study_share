@@ -1,47 +1,26 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import '../../../config/navigation/app_routes.dart';
-import '../../../core/api/network/chat_service.dart';
-import '../../../core/services/secure_storage_service.dart';
+import '../../../core/providers/auth_provider.dart';
+import '../../../core/providers/chat_provider.dart';
 
-class InboxScreen extends StatefulWidget {
+class InboxScreen extends StatelessWidget {
   const InboxScreen({super.key});
 
   @override
-  State<InboxScreen> createState() => _InboxScreenState();
-}
-
-class _InboxScreenState extends State<InboxScreen> {
-  final ChatService _chatService = ChatService();
-  final SecureStorageService _storage = SecureStorageService();
-  
-  List<dynamic> _conversations = [];
-  bool _isLoading = true;
-  String? _currentUserId;
-
-  @override
-  void initState() {
-    super.initState();
-    _loadConversations();
-  }
-
-  Future<void> _loadConversations() async {
-    final userData = await _storage.getUserData();
-    _currentUserId = userData?['userId'];
-
-    final response = await _chatService.getConversations();
-    if (response.success && response.data != null) {
-      setState(() {
-        _conversations = response.data!;
-        _isLoading = false;
-      });
-    } else {
-      setState(() => _isLoading = false);
-    }
-  }
-
-  @override
   Widget build(BuildContext context) {
+    final chatProvider = Provider.of<ChatProvider>(context);
+    final authProvider = Provider.of<AuthProvider>(context);
+    
+    // Fetch conversations on build
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (chatProvider.conversations.isEmpty && !chatProvider.isLoading) {
+        chatProvider.fetchConversations();
+      }
+    });
+
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
@@ -50,21 +29,21 @@ class _InboxScreenState extends State<InboxScreen> {
         elevation: 0,
         iconTheme: const IconThemeData(color: Colors.black),
       ),
-      body: _isLoading
+      body: chatProvider.isLoading && chatProvider.conversations.isEmpty
           ? const Center(child: CircularProgressIndicator())
-          : _conversations.isEmpty
+          : chatProvider.conversations.isEmpty
               ? _buildEmptyInbox()
               : RefreshIndicator(
-                  onRefresh: _loadConversations,
+                  onRefresh: () => chatProvider.fetchConversations(),
                   child: ListView.separated(
                     padding: const EdgeInsets.all(15),
-                    itemCount: _conversations.length,
+                    itemCount: chatProvider.conversations.length,
                     separatorBuilder: (context, index) => const Divider(height: 1),
                     itemBuilder: (context, index) {
-                      final conv = _conversations[index];
+                      final conv = chatProvider.conversations[index];
                       final book = conv['book'];
                       
-                      final isBuyer = conv['buyerId'] == _currentUserId;
+                      final isBuyer = conv['buyerId'] == authProvider.user?.id;
                       final otherUser = isBuyer ? conv['seller'] : conv['buyer'];
                       
                       final String bookTitle = book?['title'] ?? "Deleted Book";
@@ -80,12 +59,11 @@ class _InboxScreenState extends State<InboxScreen> {
                             );
                             return;
                           }
-                          // Prepare book data with conversationId
                           final bookData = {
-                            'id': book['id'],
+                            'id': book['id'] ?? book['_id'],
                             'title': book['title'],
                             'sellingPrice': book['sellingPrice'],
-                            'conversationId': conv['id'], // Crucial!
+                            'conversationId': conv['id'] ?? conv['_id'],
                             'otherUser': otherUser,
                             'sellerId': conv['sellerId'],
                           };
@@ -94,7 +72,7 @@ class _InboxScreenState extends State<InboxScreen> {
                         leading: CircleAvatar(
                           radius: 28,
                           backgroundColor: Colors.grey[200],
-                          backgroundImage: imageUrl != null ? NetworkImage(imageUrl) : null,
+                          backgroundImage: imageUrl != null ? CachedNetworkImageProvider(imageUrl) : null,
                           child: imageUrl == null ? const Icon(Icons.person, color: Colors.grey) : null,
                         ),
                         title: Text(

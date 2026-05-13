@@ -1,7 +1,5 @@
-
-import 'package:flutter/foundation.dart';
 import 'package:logger/logger.dart';
-
+import 'package:flutter/foundation.dart';
 import '../constants/app_constants.dart';
 
 /// Simple synchronization for Dart
@@ -9,7 +7,7 @@ void synchronized(Object lock, void Function() block) {
   block();
 }
 
-/// Log levels enum (lowerCamelCase for Dart lint)
+/// Log levels enum
 enum LogLevel { debug, info, warning, error, fatal }
 
 /// Extension to get uppercase name for logs
@@ -56,12 +54,12 @@ class LoggingService {
 
   /// Internal logging
   void _log(
-      LogLevel level,
-      String source,
-      String message, [
-        dynamic error,
-        StackTrace? stackTrace,
-      ]) {
+    LogLevel level,
+    String source,
+    String message, [
+    dynamic error,
+    StackTrace? stackTrace,
+  ]) {
     if (!_isInitialized || !AppConstants.enableLogging) {
       if (kDebugMode) print('[$level] $source: $message');
       return;
@@ -72,10 +70,6 @@ class LoggingService {
     if (AppConstants.enableConsoleLogging) {
       _logToConsole(level, source, message, error, stackTrace);
     }
-
-    // if (level == LogLevel.error || level == LogLevel.fatal) {
-    //   _logToCrashlytics(level, source, message, error, stackTrace);
-    // }
   }
 
   bool _shouldLog(LogLevel level) {
@@ -111,12 +105,12 @@ class LoggingService {
   }
 
   void _logToConsole(
-      LogLevel level,
-      String source,
-      String message, [
-        dynamic error,
-        StackTrace? stackTrace,
-      ]) {
+    LogLevel level,
+    String source,
+    String message, [
+    dynamic error,
+    StackTrace? stackTrace,
+  ]) {
     switch (level) {
       case LogLevel.debug:
         _logger?.d('[$source] $message', error: error, stackTrace: stackTrace);
@@ -136,30 +130,6 @@ class LoggingService {
     }
   }
 
-  // void _logToCrashlytics(LogLevel level, String source, String message, [dynamic error, StackTrace? stackTrace]) {
-  //   try {
-  //     final crashlytics = FirebaseCrashlytics.instance;
-  //     crashlytics.setCustomKey('log_level', level.name);
-  //     crashlytics.setCustomKey('log_source', source);
-  //     crashlytics.log('[$source] $message');
-
-  //     if (error != null) {
-  //       crashlytics.recordError(
-  //         error,
-  //         stackTrace,
-  //         fatal: level == LogLevel.fatal,
-  //         information: [
-  //           DiagnosticsProperty('source', source),
-  //           DiagnosticsProperty('level', level.name),
-  //           DiagnosticsProperty('message', message),
-  //         ],
-  //       );
-  //     }
-  //   } catch (e) {
-  //     if (kDebugMode) print('Failed to log to Crashlytics: $e');
-  //   }
-  // }
-
   // Public logging methods
   void debug(String source, String message, {Object? error, StackTrace? stackTrace}) =>
       _log(LogLevel.debug, source, message, error, stackTrace);
@@ -174,68 +144,41 @@ class LoggingService {
 
   // Category-specific logging
   void logApi(
-      String message, {
-        LogLevel level = LogLevel.info,
-        Object? error,
-        StackTrace? stackTrace,
-      }) => _log(level, AppConstants.logCategoryApi, message, error, stackTrace);
+    String message, {
+    LogLevel level = LogLevel.info,
+    Object? error,
+    StackTrace? stackTrace,
+  }) => _log(level, AppConstants.logCategoryApi, message, error, stackTrace);
   void logAuth(
-      String message, {
-        LogLevel level = LogLevel.info,
-        Object? error,
-        StackTrace? stackTrace,
-      }) => _log(level, AppConstants.logCategoryAuth, message, error, stackTrace);
+    String message, {
+    LogLevel level = LogLevel.info,
+    Object? error,
+    StackTrace? stackTrace,
+  }) => _log(level, AppConstants.logCategoryAuth, message, error, stackTrace);
   void logUi(
-      String message, {
-        LogLevel level = LogLevel.info,
-        Object? error,
-        StackTrace? stackTrace,
-      }) => _log(level, AppConstants.logCategoryUI, message, error, stackTrace);
+    String message, {
+    LogLevel level = LogLevel.info,
+    Object? error,
+    StackTrace? stackTrace,
+  }) => _log(level, AppConstants.logCategoryUI, message, error, stackTrace);
   void logStorage(
-      String message, {
-        LogLevel level = LogLevel.info,
-        Object? error,
-        StackTrace? stackTrace,
-      }) => _log(level, AppConstants.logCategoryStorage, message, error, stackTrace);
+    String message, {
+    LogLevel level = LogLevel.info,
+    Object? error,
+    StackTrace? stackTrace,
+  }) => _log(level, AppConstants.logCategoryStorage, message, error, stackTrace);
   void logNetwork(
-      String message, {
-        LogLevel level = LogLevel.info,
-        Object? error,
-        StackTrace? stackTrace,
-      }) => _log(level, AppConstants.logCategoryNetwork, message, error, stackTrace);
+    String message, {
+    LogLevel level = LogLevel.info,
+    Object? error,
+    StackTrace? stackTrace,
+  }) => _log(level, AppConstants.logCategoryNetwork, message, error, stackTrace);
   void logGeneral(
-      String message, {
-        LogLevel level = LogLevel.info,
-        Object? error,
-        StackTrace? stackTrace,
-      }) => _log(level, AppConstants.logCategoryGeneral, message, error, stackTrace);
-
-  // void recordCrash(dynamic error, StackTrace? stackTrace, {String? reason, bool fatal = true}) {
-  //   try {
-  //     final crashlytics = FirebaseCrashlytics.instance;
-  //     if (reason != null) crashlytics.log('Manual crash report: $reason');
-  //     crashlytics.recordError(error, stackTrace, fatal: fatal);
-  //     _log(LogLevel.fatal, 'CrashReport', reason ?? 'Manual crash report', error, stackTrace);
-  //   } catch (e) {
-  //     if (kDebugMode) print('Failed to record crash: $e');
-  //   }
-  // }
-
-  // void setUserId(String userId) {
-  //   try {
-  //     FirebaseCrashlytics.instance.setUserIdentifier(userId);
-  //   } catch (e) {
-  //     if (kDebugMode) print('Failed to set user ID in Crashlytics: $e');
-  //   }
-  // }
-
-  // void setCustomKey(String key, dynamic value) {
-  //   try {
-  //     FirebaseCrashlytics.instance.setCustomKey(key, value);
-  //   } catch (e) {
-  //     if (kDebugMode) print('Failed to set custom key in Crashlytics: $e');
-  //   }
-  // }
+    String message, {
+    LogLevel level = LogLevel.info,
+    Object? error,
+    StackTrace? stackTrace,
+  }) => _log(level, AppConstants.logCategoryGeneral, message, error, stackTrace);
 
   void dispose() => _isInitialized = false;
 }

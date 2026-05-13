@@ -1,71 +1,22 @@
 import 'package:flutter/material.dart';
-import '../../../core/api/network/book_service.dart';
+import 'package:provider/provider.dart';
+import '../../../core/providers/book_provider.dart';
 import '../../../core/utils/ui_utils.dart';
 
-class MyUploadsScreen extends StatefulWidget {
+class MyUploadsScreen extends StatelessWidget {
   const MyUploadsScreen({super.key});
 
   @override
-  State<MyUploadsScreen> createState() => _MyUploadsScreenState();
-}
-
-class _MyUploadsScreenState extends State<MyUploadsScreen> {
-  final BookService _bookService = BookService();
-  List<dynamic> _myBooks = [];
-  bool _isLoading = true;
-
-  @override
-  void initState() {
-    super.initState();
-    _fetchMyAds();
-  }
-
-  Future<void> _fetchMyAds() async {
-    setState(() => _isLoading = true);
-    final response = await _bookService.getMyAds();
-    if (response.success && response.data != null) {
-      setState(() {
-        _myBooks = response.data!;
-        _isLoading = false;
-      });
-    } else {
-      setState(() => _isLoading = false);
-    }
-  }
-
-  void _toggleSoldStatus(String id, bool currentStatus) async {
-    final response = await _bookService.updateBookStatus(id, !currentStatus);
-    if (response.success) {
-      _fetchMyAds();
-      if (mounted) UIUtils.showSnackBar(context, "Status updated!");
-    }
-  }
-
-  void _deleteAd(String id) async {
-    // Confirm delete
-    bool confirm = await showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text("Delete Ad?"),
-        content: const Text("Are you sure you want to remove this book listing?"),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text("Cancel")),
-          TextButton(onPressed: () => Navigator.pop(context, true), child: const Text("Delete", style: TextStyle(color: Colors.red))),
-        ],
-      ),
-    ) ?? false;
-
-    if (confirm) {
-      final response = await _bookService.deleteBook(id);
-      if (response.success) {
-        _fetchMyAds();
-        if (mounted) UIUtils.showSnackBar(context, "Ad deleted successfully");
-      }
-    }
-  }
-
-  @override
   Widget build(BuildContext context) {
+    final bookProvider = Provider.of<BookProvider>(context);
+
+    // Initial fetch
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!bookProvider.hasFetchedMyBooks && !bookProvider.isLoading) {
+        bookProvider.fetchMyBooks();
+      }
+    });
+
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
@@ -74,21 +25,22 @@ class _MyUploadsScreenState extends State<MyUploadsScreen> {
         elevation: 0,
         iconTheme: const IconThemeData(color: Colors.black),
       ),
-      body: _isLoading
+      body: bookProvider.isLoading && bookProvider.myBooks.isEmpty
           ? const Center(child: CircularProgressIndicator())
-          : _myBooks.isEmpty
+          : bookProvider.myBooks.isEmpty
               ? _buildEmptyState()
               : RefreshIndicator(
-                  onRefresh: _fetchMyAds,
+                  onRefresh: () => bookProvider.fetchMyBooks(),
                   child: ListView.builder(
                     padding: const EdgeInsets.all(15),
-                    itemCount: _myBooks.length,
+                    itemCount: bookProvider.myBooks.length,
                     itemBuilder: (context, index) {
-                      final book = _myBooks[index];
+                      final book = bookProvider.myBooks[index];
                       final bool isSold = book['isSold'] ?? false;
                       final imageUrl = (book['images'] != null && (book['images'] as List).isNotEmpty) 
                           ? book['images'][0] 
                           : null;
+                      final String bookId = book['id'] ?? book['_id'];
 
                       return Card(
                         margin: const EdgeInsets.only(bottom: 15),
@@ -100,7 +52,6 @@ class _MyUploadsScreenState extends State<MyUploadsScreen> {
                           child: Row(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              // Book Image
                               ClipRRect(
                                 borderRadius: BorderRadius.circular(10),
                                 child: Container(
@@ -113,7 +64,6 @@ class _MyUploadsScreenState extends State<MyUploadsScreen> {
                                 ),
                               ),
                               const SizedBox(width: 15),
-                              // Details
                               Expanded(
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -139,7 +89,6 @@ class _MyUploadsScreenState extends State<MyUploadsScreen> {
                                     ),
                                     Text("₹${book['sellingPrice']}", style: const TextStyle(color: Color(0xFF00BFA5), fontWeight: FontWeight.bold)),
                                     const SizedBox(height: 12),
-                                    // Action Buttons (Using Wrap to prevent overflow)
                                     Wrap(
                                       spacing: 8,
                                       runSpacing: 8,
@@ -148,13 +97,13 @@ class _MyUploadsScreenState extends State<MyUploadsScreen> {
                                           isSold ? Icons.undo : Icons.check_circle_outline,
                                           isSold ? "Available" : "Mark Sold",
                                           isSold ? Colors.orange : Colors.green,
-                                          () => _toggleSoldStatus(book['id'], isSold),
+                                          () => _toggleSoldStatus(context, bookId, isSold),
                                         ),
                                         _buildActionButton(
                                           Icons.delete_outline,
                                           "Delete",
                                           Colors.red,
-                                          () => _deleteAd(book['id']),
+                                          () => _deleteAd(context, bookId),
                                         ),
                                       ],
                                     ),
@@ -169,6 +118,36 @@ class _MyUploadsScreenState extends State<MyUploadsScreen> {
                   ),
                 ),
     );
+  }
+
+  void _toggleSoldStatus(BuildContext context, String id, bool currentStatus) async {
+    final bookProvider = Provider.of<BookProvider>(context, listen: false);
+    final success = await bookProvider.updateBookStatus(id, !currentStatus);
+    if (success && context.mounted) {
+       UIUtils.showSnackBar(context, "Status updated!");
+    }
+  }
+
+  void _deleteAd(BuildContext context, String id) async {
+    final bookProvider = Provider.of<BookProvider>(context, listen: false);
+    bool confirm = await showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text("Delete Ad?"),
+        content: const Text("Are you sure you want to remove this book listing?"),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text("Cancel")),
+          TextButton(onPressed: () => Navigator.pop(context, true), child: const Text("Delete", style: TextStyle(color: Colors.red))),
+        ],
+      ),
+    ) ?? false;
+
+    if (confirm) {
+      final success = await bookProvider.deleteBook(id);
+      if (success && context.mounted) {
+        UIUtils.showSnackBar(context, "Ad deleted successfully");
+      }
+    }
   }
 
   Widget _buildActionButton(IconData icon, String label, Color color, VoidCallback onTap) {

@@ -1,15 +1,10 @@
 import 'package:flutter/material.dart';
 import '../../../config/theme/app_colors.dart';
 
-class HelpCenterScreen extends StatefulWidget {
+class HelpCenterScreen extends StatelessWidget {
   const HelpCenterScreen({super.key});
 
-  @override
-  State<HelpCenterScreen> createState() => _HelpCenterScreenState();
-}
-
-class _HelpCenterScreenState extends State<HelpCenterScreen> {
-  final List<Map<String, dynamic>> _faqs = [
+  final List<Map<String, dynamic>> _faqs = const [
     {
       "category": "General",
       "questions": [
@@ -64,7 +59,6 @@ class _HelpCenterScreenState extends State<HelpCenterScreen> {
       body: SingleChildScrollView(
         child: Column(
           children: [
-            // --- Search Bar Section ---
             Container(
               padding: const EdgeInsets.all(20),
               color: AppColors.primary.withValues(alpha: 0.05),
@@ -91,7 +85,6 @@ class _HelpCenterScreenState extends State<HelpCenterScreen> {
               ),
             ),
 
-            // --- FAQ Sections ---
             Padding(
               padding: const EdgeInsets.all(10.0),
               child: Column(
@@ -100,7 +93,6 @@ class _HelpCenterScreenState extends State<HelpCenterScreen> {
               ),
             ),
 
-            // --- Contact Support Section ---
             const SizedBox(height: 20),
             const Padding(
               padding: EdgeInsets.symmetric(horizontal: 20),

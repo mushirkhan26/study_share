@@ -1,55 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
 import '../../../config/theme/app_colors.dart';
-import '../../../core/api/network/notification_service.dart';
+import '../../../core/providers/notification_provider.dart';
 
-class NotificationsScreen extends StatefulWidget {
+class NotificationsScreen extends StatelessWidget {
   const NotificationsScreen({super.key});
 
   @override
-  State<NotificationsScreen> createState() => _NotificationsScreenState();
-}
-
-class _NotificationsScreenState extends State<NotificationsScreen> {
-  final NotificationService _notificationService = NotificationService();
-  List<dynamic> _notifications = [];
-  bool _isLoading = true;
-
-  @override
-  void initState() {
-    super.initState();
-    _fetchNotifications();
-  }
-
-  Future<void> _fetchNotifications() async {
-    setState(() => _isLoading = true);
-    final response = await _notificationService.getNotifications();
-    if (response.success && response.data != null) {
-      setState(() {
-        _notifications = response.data!;
-        _isLoading = false;
-      });
-    } else {
-      setState(() => _isLoading = false);
-    }
-  }
-
-  void _markAllAsRead() async {
-    final response = await _notificationService.markAllAsRead();
-    if (response.success) {
-      _fetchNotifications();
-    }
-  }
-
-  void _markAsRead(String id) async {
-    final response = await _notificationService.markAsRead(id);
-    if (response.success) {
-      _fetchNotifications();
-    }
-  }
-
-  @override
   Widget build(BuildContext context) {
+    final notificationProvider = Provider.of<NotificationProvider>(context);
+
+    // Initial fetch
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!notificationProvider.hasFetched && !notificationProvider.isLoading) {
+        notificationProvider.fetchNotifications();
+      }
+    });
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
@@ -58,28 +25,30 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         elevation: 0,
         iconTheme: const IconThemeData(color: Colors.black),
         actions: [
-          if (_notifications.any((n) => n['isRead'] == false))
+          if (notificationProvider.notifications.any((n) => n['isRead'] == false))
             TextButton(
-              onPressed: _markAllAsRead,
+              onPressed: () => notificationProvider.markAllAsRead(),
               child: const Text("Mark all as read", style: TextStyle(color: AppColors.primary, fontSize: 12)),
             ),
         ],
       ),
-      body: _isLoading 
+      body: notificationProvider.isLoading && notificationProvider.notifications.isEmpty
           ? const Center(child: CircularProgressIndicator())
-          : _notifications.isEmpty
+          : notificationProvider.notifications.isEmpty
               ? _buildEmptyState()
               : RefreshIndicator(
-                  onRefresh: _fetchNotifications,
+                  onRefresh: () => notificationProvider.fetchNotifications(),
                   child: ListView.separated(
                     padding: const EdgeInsets.all(10),
-                    itemCount: _notifications.length,
+                    itemCount: notificationProvider.notifications.length,
                     separatorBuilder: (context, index) => const Divider(height: 1, color: Color(0xFFEEEEEE)),
                     itemBuilder: (context, index) {
-                      final item = _notifications[index];
+                      final item = notificationProvider.notifications[index];
                       return GestureDetector(
                         onTap: () {
-                          if (!item['isRead']) _markAsRead(item['id']);
+                          if (!(item['isRead'] ?? false)) {
+                             notificationProvider.markAsRead(item['id'] ?? item['_id']);
+                          }
                         },
                         child: _buildNotificationItem(item),
                       );
@@ -91,7 +60,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
 
   Widget _buildNotificationItem(Map<String, dynamic> item) {
     final bool isRead = item['isRead'] ?? false;
-    final String timeStr = item['createdAt'];
+    final String? timeStr = item['createdAt'];
     final String formattedTime = timeStr != null 
         ? DateFormat('MMM d, hh:mm a').format(DateTime.parse(timeStr).toLocal())
         : "";

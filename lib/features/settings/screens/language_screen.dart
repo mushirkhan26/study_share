@@ -1,27 +1,23 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../../config/theme/app_colors.dart';
+import '../../../core/providers/ui_provider.dart';
 
-class LanguageScreen extends StatefulWidget {
+class LanguageScreen extends StatelessWidget {
   const LanguageScreen({super.key});
 
-  @override
-  State<LanguageScreen> createState() => _LanguageScreenState();
-}
-
-class _LanguageScreenState extends State<LanguageScreen> {
-  // Current selected language (Dummy state for now)
-  String _selectedLanguage = 'English';
-
-  final List<Map<String, String>> _languages = [
-    {'name': 'English', 'sub': 'Default Language'},
-    {'name': 'Hindi', 'sub': 'हिन्दी'},
-    {'name': 'Spanish', 'sub': 'Español'},
-    {'name': 'French', 'sub': 'Français'},
-    {'name': 'Arabic', 'sub': 'العربية'},
+  final List<Map<String, dynamic>> _languages = const [
+    {'name': 'English', 'sub': 'Default Language', 'code': 'en'},
+    {'name': 'Hindi', 'sub': 'हिन्दी', 'code': 'hi'},
+    {'name': 'Spanish', 'sub': 'Español', 'code': 'es'},
+    {'name': 'French', 'sub': 'Français', 'code': 'fr'},
+    {'name': 'Arabic', 'sub': 'العربية', 'code': 'ar'},
   ];
 
   @override
   Widget build(BuildContext context) {
+    final uiProvider = Provider.of<UIProvider>(context);
+
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
@@ -44,6 +40,8 @@ class _LanguageScreenState extends State<LanguageScreen> {
                 return _buildLanguageOption(
                   title: lang['name']!,
                   subtitle: lang['sub']!,
+                  isSelected: uiProvider.locale.languageCode == lang['code'],
+                  onTap: () => uiProvider.setLocale(Locale(lang['code'])),
                 );
               },
             ),
@@ -77,9 +75,12 @@ class _LanguageScreenState extends State<LanguageScreen> {
     );
   }
 
-  Widget _buildLanguageOption({required String title, required String subtitle}) {
-    final bool isSelected = _selectedLanguage == title;
-
+  Widget _buildLanguageOption({
+    required String title, 
+    required String subtitle,
+    required bool isSelected,
+    required VoidCallback onTap,
+  }) {
     return ListTile(
       contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 5),
       leading: Container(
@@ -106,12 +107,7 @@ class _LanguageScreenState extends State<LanguageScreen> {
       trailing: isSelected 
           ? const Icon(Icons.radio_button_checked_rounded, color: AppColors.primary, size: 24)
           : const Icon(Icons.radio_button_off_rounded, color: Colors.grey, size: 24),
-      onTap: () {
-        setState(() {
-          _selectedLanguage = title;
-        });
-        // Future: Implement localization/translation logic
-      },
+      onTap: onTap,
     );
   }
 }

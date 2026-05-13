@@ -24,10 +24,20 @@ class SocketService {
       'forceNew': true, // Use forceNew to ensure a clean connection
     });
 
-    _socket!.onConnect((_) => print('Socket Connected: ${_socket?.id}'));
-    _socket!.onConnectError((err) => print('Socket Connect Error: $err'));
-    _socket!.onDisconnect((_) => print('Socket Disconnected'));
-    _socket!.onError((err) => print('Socket Error: $err'));
+    _socket!.onConnect((_) {
+      print('Socket Connected: ${_socket?.id}');
+    });
+    _socket!.onConnectError((err) {
+      print('Socket Connect Error: $err');
+    });
+    _socket!.onDisconnect((reason) {
+      print('Socket Disconnected: $reason');
+    });
+    _socket!.on('error', (err) {
+      print('Socket Error: $err');
+    });
+    _socket!.onReconnectAttempt((_) => print('Socket Reconnect Attempt'));
+    _socket!.onReconnect((_) => print('Socket Reconnected'));
     
     // Global listener for notifications
     _socket!.on('receive_message', (data) {

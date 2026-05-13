@@ -1,13 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:video_player/video_player.dart';
+import 'package:provider/provider.dart';
 
 import '../../../config/navigation/app_routes.dart';
 import '../../../config/theme/app_colors.dart';
 import '../../../core/constants/app_constants.dart';
-import '../../../core/services/secure_storage_service.dart';
-
-// 🛑 AuthProvider ka import hata diya gaya hai
+import '../../../core/providers/auth_provider.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -43,6 +42,7 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
 
     try {
       await _videoController.initialize();
+      if (!mounted) return;
       setState(() => _isVideoInitialized = true);
       _videoController.play();
       _videoController.setLooping(false);
@@ -50,12 +50,12 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
       _videoController.addListener(() {
         final bool isFinished = _videoController.value.position >= _videoController.value.duration;
         if (isFinished && !_videoEnded) {
+          if (!mounted) return;
           setState(() => _videoEnded = true);
-          _navigateToNext(); // 🚀 Seedha next screen par
+          _navigateToNext();
         }
       });
     } catch (e) {
-      // Agar video file missing ho ya error aaye, toh 2 sec baad navigate karein
       _navigateToNext();
     }
   }
@@ -63,14 +63,26 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
   Future<void> _navigateToNext() async {
     _pulseController.repeat(reverse: true);
 
-    // ⏳ Abhi ke liye sirf 2 second ka intezar
     await Future.delayed(const Duration(seconds: 2));
 
     if (!mounted) return;
 
-    // 🚀 Bina check kiye seedha Login ya Home par bhejein
-    // Abhi testing ke liye hum Login route par bhej rahe hain
-    context.go(AppRoutes.loginRoute);
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    
+    // Wait for AuthProvider to finish loading from storage if it hasn't yet
+    int attempts = 0;
+    while (!authProvider.isInitialized && attempts < 20) {
+      await Future.delayed(const Duration(milliseconds: 100));
+      attempts++;
+    }
+
+    if (!mounted) return;
+
+    if (authProvider.user != null) {
+      context.go(AppRoutes.homeRoute);
+    } else {
+      context.go(AppRoutes.loginRoute);
+    }
   }
 
   @override
@@ -86,7 +98,6 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
       backgroundColor: Colors.white,
       body: Stack(
         children: [
-          // 1. Video Player Section
           if (!_videoEnded && _isVideoInitialized)
             Center(
               child: SizedBox(
@@ -98,13 +109,11 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
               ),
             ),
 
-          // 2. Loading State (Video ke baad ya error aane par)
           if (_videoEnded || !_isVideoInitialized)
             Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  // App Logo (Aapke constants se)
                   Image.asset(AppConstants.logo, width: 150, errorBuilder: (context, error, stackTrace) {
                     return const Icon(Icons.school, size: 80, color: AppColors.primary);
                   }),
