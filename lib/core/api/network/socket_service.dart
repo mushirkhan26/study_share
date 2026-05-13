@@ -19,7 +19,7 @@ class SocketService {
     if (_socket != null && _socket!.connected) return;
 
     _socket = io_client.io(serverUrl, <String, dynamic>{
-      'transports': ['websocket'],
+      'transports': ['websocket', 'polling'],
       'autoConnect': true,
       'forceNew': true, // Use forceNew to ensure a clean connection
     });

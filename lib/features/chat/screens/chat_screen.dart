@@ -19,6 +19,7 @@ class ChatScreen extends StatefulWidget {
 
 class _ChatScreenState extends State<ChatScreen> {
   final TextEditingController _messageController = TextEditingController();
+  final ScrollController _scrollController = ScrollController();
 
   @override
   void initState() {
@@ -26,6 +27,16 @@ class _ChatScreenState extends State<ChatScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _setupChat();
     });
+  }
+
+  void _scrollToBottom() {
+    if (_scrollController.hasClients) {
+      _scrollController.animateTo(
+        _scrollController.position.maxScrollExtent,
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeOut,
+      );
+    }
   }
 
   void _setupChat() {
@@ -46,7 +57,9 @@ class _ChatScreenState extends State<ChatScreen> {
         conversationId: conversationId,
         sellerId: sellerId,
         bookId: bookId,
-      );
+      ).then((_) {
+        _scrollToBottom();
+      });
     }
   }
 
@@ -60,8 +73,11 @@ class _ChatScreenState extends State<ChatScreen> {
     final currentUserId = authProvider.user?.id;
     
     if (conversationId != null && currentUserId != null) {
-      chatProvider.sendMessage(conversationId, _messageController.text.trim(), currentUserId, "");
+      final text = _messageController.text.trim();
       _messageController.clear();
+      chatProvider.sendMessage(conversationId, text, currentUserId, "").then((_) {
+        _scrollToBottom();
+      });
     } else {
       // Handle case where conversation ID is not yet ready
       ScaffoldMessenger.of(context).showSnackBar(
@@ -147,6 +163,7 @@ class _ChatScreenState extends State<ChatScreen> {
               child: chatProvider.isLoading && chatProvider.messages.isEmpty
                   ? const Center(child: CircularProgressIndicator())
                   : ListView.builder(
+                controller: _scrollController,
                 padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 10),
                 itemCount: chatProvider.messages.length,
                 itemBuilder: (context, index) {
@@ -207,10 +224,10 @@ class _ChatScreenState extends State<ChatScreen> {
                       backgroundColor: const Color(0xFF00BFA5),
                       radius: 22,
                       child: IconButton(
-                        icon: chatProvider.isLoading && chatProvider.activeConversationId == null
+                        icon: chatProvider.isLoading
                             ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
                             : const Icon(Icons.send, color: Colors.white, size: 20),
-                        onPressed: () => _sendMessage(l10n),
+                        onPressed: chatProvider.isLoading ? null : () => _sendMessage(l10n),
                       ),
                     ),
                   ],
@@ -226,6 +243,7 @@ class _ChatScreenState extends State<ChatScreen> {
   @override
   void dispose() {
     _messageController.dispose();
+    _scrollController.dispose();
     super.dispose();
   }
 }

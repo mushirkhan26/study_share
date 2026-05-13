@@ -69,6 +69,31 @@ class ChatService {
     }
   }
 
+  Future<ApiResponse<Map<String, dynamic>>> sendMessage(String conversationId, String text) async {
+    try {
+      final token = await _storage.getToken();
+      final response = await http.post(
+        Uri.parse('${AppConstants.apiBaseUrl}chat/message'),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode({
+          'conversationId': conversationId,
+          'text': text,
+        }),
+      );
+
+      if (response.statusCode == 201) {
+        return ApiResponse.success(jsonDecode(response.body));
+      } else {
+        return ApiResponse.error('Failed to send message');
+      }
+    } catch (e) {
+      return ApiResponse.error('Network Error: $e');
+    }
+  }
+
   Future<ApiResponse<void>> markAsRead(String conversationId) async {
     try {
       final token = await _storage.getToken();

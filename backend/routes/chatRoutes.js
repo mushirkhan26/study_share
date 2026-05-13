@@ -87,4 +87,26 @@ router.put('/messages/:conversationId/read', protect, async (req, res) => {
   }
 });
 
+// @desc    Send a message (HTTP Fallback)
+// @route   POST /api/chat/message
+router.post('/message', protect, async (req, res) => {
+  const { conversationId, text } = req.body;
+  const senderId = req.user.id;
+
+  try {
+    const newMessage = await Message.create({
+      conversationId,
+      senderId,
+      text
+    });
+
+    // Update conversation timestamp
+    await Conversation.update({ updatedAt: new Date() }, { where: { id: conversationId } });
+
+    res.status(201).json(newMessage);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
 module.exports = router;
