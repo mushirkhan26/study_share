@@ -280,8 +280,10 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
           ],
         ),
       ),
-      bottomNavigationBar: shouldHideDetails 
-        ? Container(
+      bottomNavigationBar: isMyBook
+        ? null
+        : shouldHideDetails 
+          ? Container(
             padding: const EdgeInsets.all(20),
             color: theme.brightness == Brightness.dark ? Colors.orange.withValues(alpha: 0.1) : Colors.amber.shade50,
             child: Row(
