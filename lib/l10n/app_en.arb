@@ -315,5 +315,13 @@
   "policyRightsContent": "You have the right to access, update, or delete your personal information at any time through the app's settings. If you choose to delete your account, all your data will be permanently removed from our servers.",
   "policyContactTitle": "6. Contact Us",
   "policyContactContent": "If you have any questions about this Privacy Policy, please contact us at support@studyshare.com.",
-  "thankYouTrusting": "Thank you for trusting Study Share."
+  "thankYouTrusting": "Thank you for trusting Study Share.",
+
+  "onboarding1Title": "Find Affordable Books",
+  "onboarding1Subtitle": "Discover second-hand books and study materials from your seniors at a fraction of the cost.",
+  "onboarding2Title": "Sell & Help Juniors",
+  "onboarding2Subtitle": "Pass on your old books to juniors, help them succeed, and earn some extra cash.",
+  "skip": "Skip",
+  "next": "Next",
+  "getStarted": "Get Started"
 }

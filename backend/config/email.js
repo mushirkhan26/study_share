@@ -1,10 +1,28 @@
 const { Resend } = require('resend');
 require('dotenv').config();
 
-// Use the API key from .env or fallback for testing (but primarily .env)
-const resend = new Resend(process.env.RESEND_API_KEY);
+// Use the API key from .env
+const resendApiKey = process.env.RESEND_API_KEY;
+
+// Safely initialize Resend only if API key exists to prevent server crash
+let resend = null;
+if (resendApiKey && resendApiKey !== 're_dummy_key') {
+  try {
+    resend = new Resend(resendApiKey);
+  } catch (error) {
+    console.error('Failed to initialize Resend:', error.message);
+  }
+} else {
+  console.warn('RESEND_API_KEY is missing or invalid. Email features will be disabled.');
+}
 
 const sendOTP = async (email, otp) => {
+  if (!resend) {
+    console.warn('Cannot send email: Resend is not configured.');
+    console.log(`[DEV MODE] OTP for ${email} is: ${otp}`);
+    return true;
+  }
+
   try {
     const { data, error } = await resend.emails.send({
       from: 'StudyShare <onboarding@resend.dev>',

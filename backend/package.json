@@ -2,6 +2,9 @@
   "name": "study_share_backend",
   "version": "1.0.0",
   "description": "PostgreSQL Backend for StudyShare App",
+  "license": "ISC",
+  "author": "",
+  "type": "commonjs",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
@@ -20,7 +23,7 @@
     "nodemailer": "^8.0.7",
     "pg": "^8.11.3",
     "pg-hstore": "^2.3.4",
-    "resend": "^4.1.2",
+    "resend": "^4.8.0",
     "sequelize": "^6.33.0",
     "socket.io": "^4.8.3",
     "uuid": "^14.0.0"

@@ -773,4 +773,27 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get thankYouTrusting => 'स्टडी शेयर पर भरोसा करने के लिए धन्यवाद।';
+
+  @override
+  String get onboarding1Title => 'सस्ती किताबें खोजें';
+
+  @override
+  String get onboarding1Subtitle =>
+      'अपने वरिष्ठों से पुरानी किताबें और अध्ययन सामग्री बहुत कम कीमत पर प्राप्त करें।';
+
+  @override
+  String get onboarding2Title => 'बेचें और जूनियर की मदद करें';
+
+  @override
+  String get onboarding2Subtitle =>
+      'अपनी पुरानी किताबें जूनियर को दें, उनकी सफलता में मदद करें और कुछ अतिरिक्त पैसे कमाएं।';
+
+  @override
+  String get skip => 'छोड़ें';
+
+  @override
+  String get next => 'अगला';
+
+  @override
+  String get getStarted => 'शुरू करें';
 }

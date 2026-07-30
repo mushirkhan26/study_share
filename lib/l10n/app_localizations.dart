@@ -1549,6 +1549,48 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Thank you for trusting Study Share.'**
   String get thankYouTrusting;
+
+  /// No description provided for @onboarding1Title.
+  ///
+  /// In en, this message translates to:
+  /// **'Find Affordable Books'**
+  String get onboarding1Title;
+
+  /// No description provided for @onboarding1Subtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Discover second-hand books and study materials from your seniors at a fraction of the cost.'**
+  String get onboarding1Subtitle;
+
+  /// No description provided for @onboarding2Title.
+  ///
+  /// In en, this message translates to:
+  /// **'Sell & Help Juniors'**
+  String get onboarding2Title;
+
+  /// No description provided for @onboarding2Subtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Pass on your old books to juniors, help them succeed, and earn some extra cash.'**
+  String get onboarding2Subtitle;
+
+  /// No description provided for @skip.
+  ///
+  /// In en, this message translates to:
+  /// **'Skip'**
+  String get skip;
+
+  /// No description provided for @next.
+  ///
+  /// In en, this message translates to:
+  /// **'Next'**
+  String get next;
+
+  /// No description provided for @getStarted.
+  ///
+  /// In en, this message translates to:
+  /// **'Get Started'**
+  String get getStarted;
 }
 
 class _AppLocalizationsDelegate

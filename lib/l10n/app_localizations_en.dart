@@ -767,4 +767,27 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get thankYouTrusting => 'Thank you for trusting Study Share.';
+
+  @override
+  String get onboarding1Title => 'Find Affordable Books';
+
+  @override
+  String get onboarding1Subtitle =>
+      'Discover second-hand books and study materials from your seniors at a fraction of the cost.';
+
+  @override
+  String get onboarding2Title => 'Sell & Help Juniors';
+
+  @override
+  String get onboarding2Subtitle =>
+      'Pass on your old books to juniors, help them succeed, and earn some extra cash.';
+
+  @override
+  String get skip => 'Skip';
+
+  @override
+  String get next => 'Next';
+
+  @override
+  String get getStarted => 'Get Started';
 }

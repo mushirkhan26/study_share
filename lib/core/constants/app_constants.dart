@@ -4,10 +4,10 @@ class AppConstants {
   static const String appVersion = '1.0.0';
 
   // API Configuration
-  static const String apiBaseUrl = "https://study-share-cvkc.onrender.com/api/";
-  static const String socketBaseUrl = "https://study-share-cvkc.onrender.com";
-  // static const String apiBaseUrl = "http://192.168.1.112:5000/api/";
-  // static const String socketBaseUrl = "http://192.168.1.112:5000";
+  // static const String apiBaseUrl = "https://study-share-cvkc.onrender.com/api/";
+  // static const String socketBaseUrl = "https://study-share-cvkc.onrender.com";
+  static const String apiBaseUrl = "http://192.168.17.22:5000/api/";
+  static const String socketBaseUrl = "http://192.168.17.22:5000";
 
   // Assets (Images & Icons)
   static const String baseImg = "assets/images";
