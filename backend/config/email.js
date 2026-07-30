@@ -4,9 +4,9 @@ require('dotenv').config();
 // Use the API key from .env
 const resendApiKey = process.env.RESEND_API_KEY;
 
-// Safely initialize Resend only if API key exists to prevent server crash
+// Safely initialize Resend only if API key exists and is valid to prevent server crash
 let resend = null;
-if (resendApiKey && resendApiKey !== 're_dummy_key') {
+if (resendApiKey && resendApiKey !== 're_dummy_key' && resendApiKey.trim() !== "") {
   try {
     resend = new Resend(resendApiKey);
   } catch (error) {
