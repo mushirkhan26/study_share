@@ -1,22 +1,34 @@
 const { Sequelize } = require('sequelize');
 require('dotenv').config();
 
-const sequelize = new Sequelize(
-  process.env.DB_NAME,
-  process.env.DB_USER,
-  process.env.DB_PASS,
-  {
-    host: process.env.DB_HOST,
-    dialect: 'postgres',
-    logging: false, // Set to true if you want to see SQL queries
-    dialectOptions: {
-      ssl: process.env.DB_SSL === 'true' ? {
-        require: true,
-        rejectUnauthorized: false
-      } : false
-    }
-  }
-);
+// Support both individual variables and full DATABASE_URL for Render
+const sequelize = process.env.DATABASE_URL
+  ? new Sequelize(process.env.DATABASE_URL, {
+      dialect: 'postgres',
+      logging: false,
+      dialectOptions: {
+        ssl: {
+          require: true,
+          rejectUnauthorized: false
+        }
+      }
+    })
+  : new Sequelize(
+      process.env.DB_NAME,
+      process.env.DB_USER,
+      process.env.DB_PASS,
+      {
+        host: process.env.DB_HOST,
+        dialect: 'postgres',
+        logging: false,
+        dialectOptions: {
+          ssl: process.env.DB_SSL === 'true' ? {
+            require: true,
+            rejectUnauthorized: false
+          } : false
+        }
+      }
+    );
 
 const connectDB = async () => {
   try {
@@ -24,7 +36,6 @@ const connectDB = async () => {
     console.log('PostgreSQL Connected via Sequelize...');
 
     // Sync models - creates tables if they don't exist
-    // CAUTION: { alter: true } will update existing tables
     await sequelize.sync({ alter: true });
     console.log('Database synced successfully.');
   } catch (error) {
